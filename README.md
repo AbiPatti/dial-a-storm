@@ -29,6 +29,13 @@ npm run dev          # http://localhost:3000
 
 The repo ships with stand-in data (marked `FIXTURE` in the UI), so the app runs without the pipeline.
 
+Browser tests (Playwright) build the site and check data loading, storm selection, the sliders and
+playback. Run `npx playwright install chromium` once, then:
+
+```bash
+npm run test:e2e
+```
+
 ### Pipeline
 
 Requires Python 3.11 or 3.12. Put the NASA OMNI CSV at

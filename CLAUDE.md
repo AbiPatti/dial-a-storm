@@ -24,9 +24,14 @@ python -m venv .venv && .venv/Scripts/pip install -r requirements.txt
 # Web (run from web/)
 npm install
 npm run dev         # http://localhost:3000
-npm run typecheck   # tsc --noEmit; there is no lint or JS test script
+npm run typecheck   # tsc --noEmit; there is no lint script
 npm run build
+npm run test:e2e    # Playwright: builds, serves on :3100, tests the site in headless Chromium
+npx playwright test -g "playback"   # single e2e test
 ```
+
+**After every change, run the `verify-site` skill (`.claude/skills/verify-site/`) before reporting
+it as done, committing or merging.** New user-visible features get a test in `web/e2e/`.
 
 Local data lives in `pipeline/data/` (gitignored): `raw/` holds the 138 MB OMNI CSV (`OMNI_CSV`
 overrides the path), and `cache/` holds Parquet files and trained models. `WEB_DATA_DIR` overrides

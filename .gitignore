@@ -17,3 +17,7 @@ web/*.tsbuildinfo
 
 # OS / editor
 .DS_Store
+
+# Playwright
+web/test-results/
+web/playwright-report/
