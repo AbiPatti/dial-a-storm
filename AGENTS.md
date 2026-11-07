@@ -35,17 +35,21 @@ pipeline/                 Offline Python 3.11/3.12 (run everything from this fol
   tests/test_causality.py Leakage / contamination tests (17)
   data/                   NOT IN GIT: raw/ (CSV), cache/ (Parquet, trained models)
 web/                      Next.js 14 App Router, client-only
-  app/                    page.tsx (full-screen scene + HUD), layout.tsx, globals.css (`glass` etc.)
-  components/scene/       R3F scene (the primary interface): SpaceCanvas, Sun, Earth, AuroraRing,
-                          SolarWindParticles, Magnetopause (shell + GEO ring), SceneLabels,
-                          SelectionHalo, CameraRig (orbit + fly-to views), pick.ts (selection)
-  components/hud/         TopBar (storm picker), DialPanel, TimelineDock, InfoPanel (selected
-                          object), ModelDrawer (validation + method), GuidePanel (intro, shortcuts)
-  components/deck/        ComparisonChart (SVG)
-  components/ui/          HoldoutSection (Gannon hold-out results, shown in ModelDrawer)
+  app/                    page.tsx (two tabs: Simulator, Explainer), layout.tsx (next/font: Inter,
+                          JetBrains Mono, Instrument Serif), globals.css (`glass`, `micro` etc.)
+  components/scene/       R3F scene (the Simulator tab): SpaceCanvas, Sun, Earth (textured),
+                          SolarWindParticles (streaks + cusp capture), ImfLines, Magnetopause (shell +
+                          GEO ring), ReconnectionFlash, FieldLines, RingCurrent, AuroraRing,
+                          SceneLabels, SelectionHalo, CameraRig (orbit + fly-to views), pick.ts
+  components/hud/         TopBar (storm picker + tabs), Headline (live narration + storm phase),
+                          DialPanel, TimelineDock, InfoPanel (selected object), GuidePanel
+  components/explainer/   ExplainerTab (physics chain, method, hold-out, catalogue, honest notes)
+  components/deck/        ComparisonChart (SVG, with shock / peak markers)
+  components/ui/          HoldoutSection (Gannon hold-out results, shown in the Explainer tab)
   e2e/site.spec.ts        Playwright browser tests (playwright.config.ts serves the build on :3100)
   lib/                    types.ts (Zod), data.ts (fetch), store.ts (Zustand), interpolate.ts,
-                          live.ts (per-frame physics), severity.ts, glsl.ts, usePlayback.ts,
+                          live.ts (per-frame physics), phases.ts (shock / main / recovery),
+                          severity.ts, glsl.ts, usePlayback.ts,
                           useShortcuts.ts (keyboard), motion.ts (reduced motion)
   public/data/            Committed JSON artifacts (currently source "FIXTURE": physics stand-in)
 docs/                     CONTRACTS.md, ENGINEERING.md

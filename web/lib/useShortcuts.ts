@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { useDialStore, type ViewId } from "./store";
 
-/** Keyboard shortcuts, listed for users in the Help panel (components/hud/HelpPanel.tsx). */
+/** Keyboard shortcuts, listed for users in the Guide (components/hud/GuidePanel.tsx). */
 export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ["Space"], label: "Play / pause" },
   { keys: ["←", "→"], label: "Step 1 hour (Shift: 6 hours)" },
@@ -13,7 +13,7 @@ export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ["1", "2", "3", "4"], label: "Fly to Sun / Earth / magnetopause / aurora" },
   { keys: ["R"], label: "Reset the dials to history (1×)" },
   { keys: ["L"], label: "Show / hide labels" },
-  { keys: ["M"], label: "Model & validation" },
+  { keys: ["E"], label: "Switch between Simulator and Explainer" },
   { keys: ["?"], label: "Help" },
   { keys: ["Esc"], label: "Close panel / deselect" },
 ];
@@ -37,6 +37,15 @@ export function useShortcuts(): void {
       }
       // Range inputs own the arrow keys; buttons own Space/Enter.
       if (inField) return;
+      if (e.key === "e" || e.key === "E") {
+        s.setTab(s.tab === "simulator" ? "explainer" : "simulator");
+        return;
+      }
+      // The explainer is a normal scrolling page: Space and the arrows scroll it.
+      if (s.tab !== "simulator") {
+        if (e.key === "?") s.openPanel(s.panel === "help" ? null : "help");
+        return;
+      }
       if (e.code === "Space") {
         if (tag === "BUTTON") return;
         e.preventDefault();
@@ -69,10 +78,6 @@ export function useShortcuts(): void {
         case "l":
         case "L":
           s.toggleLabels();
-          return;
-        case "m":
-        case "M":
-          s.openPanel(s.panel === "model" ? null : "model");
           return;
         case "?":
           s.openPanel(s.panel === "help" ? null : "help");

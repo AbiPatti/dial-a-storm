@@ -134,7 +134,7 @@ export default function SceneLabels() {
         <group position={[0, -0.22, standoffToScene(GEO_RE)]}>
           <Html {...common}>
             <span className="pointer-events-none select-none whitespace-nowrap font-mono text-[10px] tracking-wide text-slate-400/80">
-              geostationary orbit · 6.6 R<sub>E</sub>
+              geostationary orbit · {GEO_RE} R<sub>E</sub>
             </span>
           </Html>
         </group>

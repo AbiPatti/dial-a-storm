@@ -97,20 +97,51 @@ test.describe("page", () => {
     expect(errors).toEqual([]);
   });
 
-  test("model & validation drawer shows the hold-out test and method", async ({ page }) => {
+  test("explainer tab explains the physics, method, hold-out test and data", async ({ page }) => {
     const errors = trackErrors(page);
     await openReady(page);
 
-    await page.getByRole("button", { name: "Model and validation" }).click();
-    const drawer = page.getByRole("dialog", { name: "Model and validation" });
-    await expect(drawer.locator("#honest-test")).toBeVisible();
-    await expect(drawer.getByRole("img").first()).toBeVisible();
-    await drawer.getByRole("tab", { name: "How it works" }).click();
-    await expect(drawer.getByText("Teaching a machine to see a magnetosphere")).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(drawer).toHaveCount(0);
-    await page.keyboard.press("m");
-    await expect(drawer).toBeVisible();
+    const tabs = page.getByRole("tablist", { name: "Sections" });
+    await expect(tabs.getByRole("tab", { name: "Simulator" })).toHaveAttribute("aria-selected", "true");
+    await tabs.getByRole("tab", { name: "Explainer" }).click();
+    const panel = page.getByRole("tabpanel", { name: "Explainer" });
+    await expect(panel).toBeVisible();
+    await expect(dials(page)).toHaveCount(0);
+    await expect(panel.getByRole("heading", { name: /reaches Earth/ })).toBeVisible();
+    await expect(panel.getByText("Teaching a machine to see a magnetosphere")).toBeVisible();
+    await expect(panel.locator("#honest-test")).toBeVisible();
+    await expect(panel.locator("#honest-test").getByRole("img").first()).toBeVisible();
+    // Catalogue: one row per storm, straight from storms.json.
+    await expect(panel.locator("#catalogue tbody tr")).toHaveCount(8);
+    // Live numbers for the loaded storm come from the data, not hard-coded text.
+    await expect(panel.getByText(/Gannon Superstorm: SYM-H reached/)).toBeVisible();
+
+    // "Show me" jumps back into the simulator with the object selected.
+    await panel.getByRole("button", { name: /Watch the shield compress/ }).click();
+    await expect(page.getByRole("complementary", { name: "Magnetopause details" })).toBeVisible();
+    await expect(tabs.getByRole("tab", { name: "Simulator" })).toHaveAttribute("aria-selected", "true");
+
+    // Keyboard: E toggles the tabs, arrow keys move within the tablist.
+    await pressGlobal(page, "e");
+    await expect(page.getByRole("tabpanel", { name: "Explainer" })).toBeVisible();
+    await tabs.getByRole("tab", { name: "Explainer" }).focus();
+    await page.keyboard.press("ArrowLeft");
+    await expect(tabs.getByRole("tab", { name: "Simulator" })).toHaveAttribute("aria-selected", "true");
+    await expect(dials(page)).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test("headline narrates the storm and names its phase", async ({ page }) => {
+    const errors = trackErrors(page);
+    await openReady(page);
+
+    const headline = page.getByRole("region", { name: "What is happening" });
+    await expect(headline.getByRole("heading", { level: 2 })).toBeVisible();
+    await expect(page.getByTestId("hero-value")).not.toHaveText(/^—/);
+    // Opens at the observed peak.
+    await expect(page.getByTestId("storm-phase")).toContainText(/peak|Main phase|Recovery/);
+    await pressGlobal(page, "Home");
+    await expect(page.getByTestId("storm-phase")).toContainText("Before the storm");
     expect(errors).toEqual([]);
   });
 });

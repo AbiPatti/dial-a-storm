@@ -49,7 +49,8 @@ affected) and drives it in headless Chromium. `web/e2e/site.spec.ts` covers:
 - the page loads with no console errors or uncaught exceptions into a full-screen, non-scrolling
   scene: header, source badge, WebGL canvas, timeline chart and the four scene-object labels
 - each of the 8 storms can be selected from the catalogue popover, and `[` / `]` step storms
-- the Model & validation drawer shows the hold-out test and "How it works"
+- the Explainer tab shows the physics chain, "How it works", the hold-out test and the 8-storm catalogue; E and the tab arrows switch tabs
+- the headline narrates the storm and names its phase (shock, main phase, peak, recovery)
 - the Bz / speed / density dials change the prediction, the BEYOND TRAINING DATA warning is absent
   for weak driving and appears at extreme settings, Max and Reset (button and `R`) work
 - playback: Play, Pause, scrub, arrow-key stepping, Home, replay speed, Simulate and Space

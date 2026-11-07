@@ -1,20 +1,17 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type KeyboardEvent } from "react";
 import { formatDate } from "@/lib/live";
 import { tierById } from "@/lib/severity";
-import { useDialStore } from "@/lib/store";
-import { ArrowIcon, ChartIcon, ChevronIcon, FitIcon, HelpIcon, LabelIcon } from "./icons";
+import { useDialStore, type TabId } from "@/lib/store";
+import { ArrowIcon, ChevronIcon, FitIcon, HelpIcon, LabelIcon } from "./icons";
 
 function SourceBadge() {
   const manifest = useDialStore((s) => s.manifest);
   if (!manifest) return null;
   const fixture = manifest.source === "FIXTURE";
   return (
-    <span
-      className={`rounded px-1.5 py-px font-mono text-[9.5px] font-semibold tracking-wider ${fixture ? "bg-alert-500 text-void" : "bg-white/[0.06] text-slate-400"}`}
-      title={manifest.model.description}
-    >
+    <span className={`micro ${fixture ? "!text-ember-300" : "!text-mint-300"}`} title={manifest.model.description}>
       {fixture ? "FIXTURE DATA" : "PIPELINE"}
     </span>
   );
@@ -87,22 +84,64 @@ function StormPicker({ anchor }: { anchor: React.RefObject<HTMLElement> }) {
   );
 }
 
+const TABS: { id: TabId; label: string }[] = [
+  { id: "simulator", label: "Simulator" },
+  { id: "explainer", label: "Explainer" },
+];
+
+/** Two top-level tabs (WAI-ARIA tabs pattern: arrow keys move between them). */
+function TabSwitch() {
+  const tab = useDialStore((s) => s.tab);
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+    e.preventDefault();
+    e.stopPropagation();
+    const i = TABS.findIndex((t) => t.id === tab);
+    const next = TABS[(i + (e.key === "ArrowRight" ? 1 : -1) + TABS.length) % TABS.length];
+    useDialStore.getState().setTab(next.id);
+    document.getElementById(`tab-${next.id}`)?.focus();
+  };
+  return (
+    <div role="tablist" aria-label="Sections" onKeyDown={onKey} className="pointer-events-auto glass order-last flex w-full shrink-0 items-center justify-center gap-0.5 p-1 sm:order-none sm:w-auto">
+      {TABS.map((t) => {
+        const active = tab === t.id;
+        return (
+          <button
+            key={t.id}
+            id={`tab-${t.id}`}
+            role="tab"
+            type="button"
+            aria-selected={active}
+            aria-controls={`${t.id}-panel`}
+            tabIndex={active ? 0 : -1}
+            onClick={() => useDialStore.getState().setTab(t.id)}
+            className={`rounded-[10px] px-3 py-1.5 text-[13px] transition-colors ${active ? "bg-white/[0.09] text-stone-100" : "text-stone-400 hover:text-stone-200"}`}
+          >
+            {t.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function TopBar() {
   const storms = useDialStore((s) => s.storms);
   const activeId = useDialStore((s) => s.activeStormId);
   const stormStatus = useDialStore((s) => s.stormStatus);
   const panel = useDialStore((s) => s.panel);
   const labels = useDialStore((s) => s.labels);
+  const tab = useDialStore((s) => s.tab);
   const chipRef = useRef<HTMLDivElement>(null);
   const storm = storms.find((s) => s.id === activeId) ?? null;
   const st = useDialStore.getState;
 
   return (
-    <header className="pointer-events-none flex items-start justify-between gap-3 p-3 sm:p-4">
+    <header className="pointer-events-none flex flex-wrap items-start justify-between gap-2 p-3 sm:flex-nowrap sm:gap-3 sm:p-4">
       <div className="pointer-events-auto glass flex min-w-0 items-center gap-1 p-1 sm:pl-3.5">
         <div className="sr-only sm:not-sr-only sm:flex sm:shrink-0 sm:items-center sm:gap-2 sm:pr-2">
-          <h1 className="text-[15px] font-semibold tracking-tight text-white">
-            Dial<span className="text-plasma-300">-a-</span>Storm
+          <h1 className="font-serif text-[22px] leading-none tracking-tight text-stone-100">
+            Dial<span className="italic text-ember-400">-a-</span>Storm
           </h1>
           <SourceBadge />
         </div>
@@ -132,6 +171,11 @@ export default function TopBar() {
                 {storm ? `${formatDate(storm.peak_time)} · #${storm.rank} of ${storms.length}` : " "}
                 {storm?.holdout && <span className="ml-1.5 font-mono text-[9.5px] text-rose-300">HOLD-OUT</span>}
                 {stormStatus === "loading" && <span className="ml-1.5 text-plasma-300">loading…</span>}
+                {stormStatus === "error" && (
+                  <span role="alert" className="ml-1.5 text-rose-300">
+                    could not load this storm
+                  </span>
+                )}
               </span>
             </span>
             <span className="shrink-0 text-slate-400">
@@ -152,32 +196,27 @@ export default function TopBar() {
         </div>
       </div>
 
+      <TabSwitch />
+
       <nav aria-label="View" className="pointer-events-auto glass flex shrink-0 items-center gap-0.5 p-1">
-        <button type="button" className="icon-btn" aria-label="Fit whole scene" data-tip="Fit scene  0" data-tip-pos="left" onClick={() => st().focusOn("overview")}>
-          <FitIcon />
-        </button>
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label="Labels"
-          aria-pressed={labels}
-          data-tip="Labels  L"
-          data-tip-pos="left"
-          onClick={() => st().toggleLabels()}
-        >
-          <LabelIcon />
-        </button>
-        <button
-          type="button"
-          className="icon-btn"
-          aria-label="Model and validation"
-          aria-expanded={panel === "model"}
-          data-tip="Model & validation  M"
-          data-tip-pos="left"
-          onClick={() => st().openPanel(panel === "model" ? null : "model")}
-        >
-          <ChartIcon />
-        </button>
+        {tab === "simulator" && (
+          <>
+            <button type="button" className="icon-btn" aria-label="Fit whole scene" data-tip="Fit scene  0" data-tip-pos="left" onClick={() => st().focusOn("overview")}>
+              <FitIcon />
+            </button>
+            <button
+              type="button"
+              className="icon-btn"
+              aria-label="Labels"
+              aria-pressed={labels}
+              data-tip="Labels  L"
+              data-tip-pos="left"
+              onClick={() => st().toggleLabels()}
+            >
+              <LabelIcon />
+            </button>
+          </>
+        )}
         <button
           type="button"
           className="icon-btn"

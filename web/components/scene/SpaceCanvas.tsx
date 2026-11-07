@@ -7,7 +7,11 @@ import { useState } from "react";
 import AuroraRing from "./AuroraRing";
 import CameraRig from "./CameraRig";
 import Earth from "./Earth";
+import FieldLines from "./FieldLines";
+import ImfLines from "./ImfLines";
 import Magnetopause from "./Magnetopause";
+import ReconnectionFlash from "./ReconnectionFlash";
+import RingCurrent from "./RingCurrent";
 import SceneLabels from "./SceneLabels";
 import SelectionHalo from "./SelectionHalo";
 import SolarWindParticles from "./SolarWindParticles";
@@ -20,14 +24,17 @@ import Sun from "./Sun";
  * Layout (scene units, Earth radius = 1 R_E = 1.5): Sun at x = -30, Earth at the origin, the
  * magnetopause shell and geostationary ring around Earth. Every object is selectable (click),
  * focusable (double-click) and labelled with its live value.
+ *
+ * `active` pauses the render loop while another tab covers the scene, so the GPU idles.
  */
-export default function SpaceCanvas() {
+export default function SpaceCanvas({ active = true }: { active?: boolean }) {
   const [glError, setGlError] = useState<string | null>(null);
 
   return (
-    <div className="fixed inset-0 z-0 bg-void" role="region" aria-label="3D scene: Sun, solar wind, Earth and magnetosphere">
+    <div className="fixed inset-0 z-0 bg-ink" role="region" aria-label="3D scene: Sun, solar wind, Earth and magnetosphere">
       <Canvas
         dpr={[1, 1.5]}
+        frameloop={active ? "always" : "never"}
         flat
         gl={{ antialias: true, alpha: false, powerPreference: "high-performance", stencil: false }}
         camera={{ position: [26, 15, 44], fov: 45, near: 0.1, far: 600 }}
@@ -35,13 +42,17 @@ export default function SpaceCanvas() {
           if (!gl.capabilities.isWebGL2) setGlError("WebGL 2 is not available in this browser.");
         }}
       >
-        <color attach="background" args={["#03050c"]} />
+        <color attach="background" args={["#08060a"]} />
         <Stars radius={220} depth={80} count={6000} factor={4} saturation={0.15} fade speed={0.4} />
         <Sun />
         <SolarWindParticles count={20_000} />
+        <ImfLines />
         <Magnetopause />
+        <ReconnectionFlash />
         <Earth>
           <AuroraRing />
+          <FieldLines />
+          <RingCurrent />
         </Earth>
         <SelectionHalo />
         <SceneLabels />
@@ -50,6 +61,9 @@ export default function SpaceCanvas() {
           <Bloom mipmapBlur intensity={0.9} luminanceThreshold={0.9} luminanceSmoothing={0.25} radius={0.7} />
         </EffectComposer>
       </Canvas>
+      {/* Vignette and film grain from the homescreen design. */}
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_55%,rgba(8,6,10,0.75)_100%)]" />
+      <div className="grain pointer-events-none absolute inset-0" />
       {glError && <div className="absolute inset-0 grid place-items-center text-sm text-slate-300">{glError}</div>}
     </div>
   );

@@ -56,23 +56,26 @@ npm run dev
 
 Open **http://localhost:3000**.
 
-You should see a Sun, a solar-wind particle stream and Earth, with a control panel on the right
-and a SYM-H chart along the bottom. An orange **FIXTURE DATA** badge next to the title is
+You should see the Simulator tab: a 3D Sun, solar-wind particles and Earth, a narrative headline
+on the left, the solar-wind dials bottom-right and the SYM-H timeline along the bottom. An orange **FIXTURE DATA** badge next to the title is
 expected. It means the predictions come from a stand-in physics model, not the trained ML model
 (Part 2 replaces them).
 
 ### Try it
 
-1. Pick a storm in the panel on the right (it starts on the Gannon Superstorm).
-2. Move the **Southward Bz**, **Wind speed** and **Proton density** sliders. The chart updates
-   live.
-3. Press **Simulate** to replay the storm. Drag on the chart or the time slider to scrub, and
-   press the space bar to play or pause.
-4. Scroll down for "How it works" and the Gannon hold-out test results.
+1. Drag to orbit the scene and scroll to zoom. Click an object or its label (Sun, Earth,
+   magnetopause, aurora) for a details card, and double-click to fly to it.
+2. Change storm with the picker at the top left, or with `[` and `]`.
+3. Move the **Southward Bz**, **Wind speed** and **Proton density** dials (bottom right). The
+   timeline updates live. **Max** sets every dial to its maximum and **Reset** returns to history.
+4. Press **Simulate from the start**, or Space, to replay the storm. Drag the timeline to scrub.
+   The headline names the storm phase: shock, main phase, peak, recovery.
+5. Open the **Explainer** tab (or press `E`) for the physics, the method, the Gannon hold-out
+   test, the storm catalogue and the data's limits.
 
-An amber **BEYOND TRAINING DATA** banner means the scenario drives the magnetosphere harder than
+An amber **BEYOND TRAINING DATA** box means the scenario drives the magnetosphere harder than
 anything in the 2010–2019 training data. It is a deliberate warning, not an error. For Gannon it
-shows even with the sliders at 1×.
+shows even with the dials at 1×.
 
 ### Other web commands (from `web/`)
 

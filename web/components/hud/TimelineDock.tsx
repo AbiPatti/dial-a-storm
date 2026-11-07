@@ -2,6 +2,7 @@
 
 import { COMPACT_M, LiveComparisonChart } from "@/components/deck/ComparisonChart";
 import { formatUtc, liveFrame } from "@/lib/live";
+import { phaseAt } from "@/lib/phases";
 import { useDialStore } from "@/lib/store";
 import { PauseIcon, PlayIcon, RestartIcon } from "./icons";
 
@@ -17,11 +18,13 @@ export default function TimelineDock() {
   const playing = useDialStore((s) => s.playing);
   const inRange = useDialStore((s) => s.inRange);
   const playbackSeconds = useDialStore((s) => s.playbackSeconds);
+  const tracePeak = useDialStore((s) => s.tracePeak);
   const { togglePlay, seek, pause, setPlaybackSeconds } = useDialStore.getState();
 
   const f = liveFrame(bundle, trace, params, cursor);
   const n = bundle?.window.n_times ?? 1;
   const dialled = params.bz !== 1 || params.speed !== 1 || params.density !== 1;
+  const phase = bundle && trace && tracePeak ? phaseAt(bundle, bundle.events, trace, tracePeak.index, cursor) : null;
 
   return (
     <section aria-label="Playback" className="glass pointer-events-auto min-w-0 flex-1 px-3 pb-2 pt-2.5">
@@ -51,6 +54,7 @@ export default function TimelineDock() {
                   {f.tier.display}
                 </span>
                 <span className="truncate">{f.tier.label}</span>
+                {phase && <span className="truncate text-ember-300" data-testid="storm-phase">· {phase.label}</span>}
               </>
             )}
             {f.filled && <span className="text-alert-300">· solar-wind gap, last value held</span>}

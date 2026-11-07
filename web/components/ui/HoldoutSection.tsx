@@ -139,13 +139,13 @@ export default function HoldoutSection() {
 
   return (
     <section id="honest-test" aria-label="Hold-out test">
-      <p className="eyebrow !text-rose-300">The honest test</p>
-      <h2 className="mt-1.5 text-xl font-semibold leading-snug text-white">
+      <p className="micro !text-rose-300">The honest test</p>
+      <h2 className="mt-3 font-serif text-3xl leading-tight tracking-tight text-stone-100 md:text-4xl">
         Can it see a storm it has never seen? {h.name}, {h.observed_peak_nT?.toFixed(0)} nT
       </h2>
-      <p className="mt-3 text-[13px] leading-relaxed text-slate-300">
+      <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-stone-300">
         The model was fitted on 2010–2019 and tuned on 2020–2022. The deepest training-era storm in our top 8 reached{" "}
-        {deepestTrain !== null ? `${deepestTrain.toFixed(0)} nT` : "about −234 nT"}. The 10–11 May 2024 storm, the strongest in two
+        {deepestTrain !== null ? `${deepestTrain.toFixed(0)} nT` : "—"}. The 10–11 May 2024 storm, the strongest in two
         decades, lies in the untouched 2023–2026 test period: no fitting, early stopping or hyper-parameter choice ever saw it. Its peak
         coupling of {storms.find((s) => s.id === h.id)?.peak_coupling_mV_m?.toFixed(1) ?? "—"} mV/m is beyond the training maximum of{" "}
         {manifest.coupling.train_max_mV_m.toFixed(1)} mV/m, so this is a test of extrapolation.
@@ -160,7 +160,7 @@ export default function HoldoutSection() {
         </div>
       )}
 
-      <div className="mt-5 grid grid-cols-2 gap-2">
+      <div className="mt-5 grid grid-cols-2 gap-2 lg:grid-cols-4">
         <PeakCard label="Observed peak" value={h.observed_peak_nT} observed={null} color="#f8fafc" />
         <PeakCard label={MODEL_LABELS[key]} value={primaryPeak} observed={h.observed_peak_nT} color={MODEL_COLORS[key]} time={h.predicted_peak_time[key]} obsTime={h.observed_peak_time} />
         {ridgePeak !== null && <PeakCard label={MODEL_LABELS.ridge} value={ridgePeak} observed={h.observed_peak_nT} color={MODEL_COLORS.ridge} time={h.predicted_peak_time.ridge} obsTime={h.observed_peak_time} />}

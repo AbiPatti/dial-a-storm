@@ -19,7 +19,8 @@ import { useDialStore, type ViewId } from "@/lib/store";
 
 type V3 = [number, number, number];
 export const VIEWS: Record<ViewId, { position: V3; target: V3 }> = {
-  overview: { position: [11, 10, 31], target: [-8.5, -1.4, 0] },
+  // Aimed slightly above the Sun–Earth line so both sit below the narrative headline (top-left).
+  overview: { position: [11, 12.5, 31], target: [-8.5, 2.2, 0] },
   sun: { position: [-12, 4.5, 21], target: [-30, 0, 0] },
   earth: { position: [4.6, 1.6, 8.2], target: [0, -0.7, 0] },
   magnetopause: { position: [4, 15, 22], target: [-1.5, -1, 0] },

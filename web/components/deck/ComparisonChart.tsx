@@ -33,6 +33,8 @@ export interface ComparisonChartProps {
   /** Draw the UTC time above the playback needle (off when the host shows the time itself). */
   cursorLabel?: boolean;
   margins?: typeof M;
+  /** Vertical event markers (e.g. shock arrival, peak) at fractional sample indices. */
+  markers?: { index: number; label: string; color: string }[];
 }
 
 export const M = { top: 14, right: 58, bottom: 24, left: 46 };
@@ -128,6 +130,7 @@ export default function ComparisonChart({
   showLegend = true,
   cursorLabel = true,
   margins: M = DEFAULT_M,
+  markers = [],
 }: ComparisonChartProps) {
   const uid = useId().replace(/:/g, "");
   const [wrapRef, width] = useElementWidth<HTMLDivElement>(720);
@@ -260,6 +263,22 @@ export default function ComparisonChart({
           )}
         </g>
 
+        {/* Event markers */}
+        {[...markers]
+          .sort((a, b) => a.index - b.index)
+          .map((m, i, all) => {
+            // Stack a label under its neighbour when the two markers are too close to read.
+            const close = i > 0 && x(m.index) - x(all[i - 1].index) < 36;
+            return (
+              <g key={m.label} pointerEvents="none">
+                <line x1={x(m.index)} x2={x(m.index)} y1={M.top} y2={M.top + plotH} stroke={m.color} strokeOpacity={0.7} strokeDasharray="2 3" />
+                <text x={x(m.index) + 3} y={M.top + (close ? 18 : 8)} className="font-mono text-[9px]" fill={m.color}>
+                  {m.label}
+                </text>
+              </g>
+            );
+          })}
+
         {/* Playback needle */}
         {cursor !== null && cx !== null && (
           <g pointerEvents="none">
@@ -370,6 +389,10 @@ export function LiveComparisonChart({ height = 210, compact = false }: { height?
       showLegend={!compact}
       cursorLabel={!compact}
       margins={compact ? COMPACT_M : M}
+      markers={[
+        ...(bundle.events.shockIndex !== null ? [{ index: bundle.events.shockIndex, label: "shock", color: "#fdba74" }] : []),
+        ...(tracePeak ? [{ index: tracePeak.index, label: "peak", color: inRange ? "#38bdf8" : "#fbbf24" }] : []),
+      ]}
       ariaLabel={`SYM-H for ${bundle.window.name}: observed versus what-if prediction`}
     />
   );

@@ -48,6 +48,7 @@ async function runSuperstormDemo() {
 
 export default function GuidePanel() {
   const open = useDialStore((s) => s.panel === "help");
+  const fixture = useDialStore((s) => s.manifest?.model.kind === "burton_fixture");
   const stormName = useDialStore((s) => s.storms.find((x) => x.id === s.activeStormId)?.name ?? "a historic storm");
   const holdoutName = useDialStore((s) => s.manifest?.holdout.name ?? "Gannon storm");
   const [step, setStep] = useState(0);
@@ -76,8 +77,13 @@ export default function GuidePanel() {
       title: "What if the Sun hit harder?",
       body: (
         <>
-          The dials rescale the real solar wind. A machine-learning model trained on 2010–2019 predicts how hard the storm hits Earth (SYM-H). Watch the
-          shield shrink inside the satellite ring and the aurora spread toward the equator. Faint ghost outlines show what really happened.
+          The dials rescale the real solar wind.{" "}
+          {fixture
+            ? "A physics model (FIXTURE stand-in until the ML pipeline runs) predicts how hard the storm hits Earth (SYM-H)."
+            : "A machine-learning model trained on 2010–2019 predicts how hard the storm hits Earth (SYM-H)."}{" "}
+          Southward field opens the shield: watch the reconnection flash at its nose, particles pour into the polar cusps, the shield shrink inside
+          the satellite ring and the aurora spread toward the equator. Faint ghost outlines show what really happened. The Explainer tab walks
+          through the physics.
         </>
       ),
     },

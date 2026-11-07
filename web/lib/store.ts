@@ -8,6 +8,7 @@
 import { create } from "zustand";
 import { loadManifest, loadScenarioGrid, loadStormWindow, loadStorms } from "./data";
 import { clampToAxis, prepareGrid, scenarioInRange, scenarioPeakCoupling, traceMinimum, trilinearTrace } from "./interpolate";
+import { detectEvents, type StormEvents } from "./phases";
 import { DEFAULT_PARAMS, type Manifest, type Params, type PreparedGrid, type StormRecord, type StormWindow } from "./types";
 
 export type LoadStatus = "idle" | "loading" | "ready" | "error";
@@ -16,8 +17,10 @@ export type LoadStatus = "idle" | "loading" | "ready" | "error";
 export type SceneObject = "sun" | "earth" | "magnetopause" | "aurora";
 /** Camera presets the rig can fly to. */
 export type ViewId = "overview" | SceneObject;
-/** Level-3 panels (only one open at a time). */
-export type PanelId = "storms" | "model" | "help";
+/** Popovers and dialogs (only one open at a time). */
+export type PanelId = "storms" | "help";
+/** Top-level tabs: the interactive simulator, or the long-form explainer. */
+export type TabId = "simulator" | "explainer";
 
 export interface StormBundle {
   window: StormWindow;
@@ -28,6 +31,8 @@ export interface StormBundle {
   stormSpan: [number, number];
   peakIndex: number;
   observedMin: number;
+  /** Shock arrival and other events detected from the window's own data (lib/phases.ts). */
+  events: StormEvents;
 }
 
 export interface DialState {
@@ -60,6 +65,7 @@ export interface DialState {
   focus: { view: ViewId; nonce: number };
   labels: boolean;
   panel: PanelId | null;
+  tab: TabId;
 
   init: () => Promise<void>;
   selectStorm: (id: string) => Promise<void>;
@@ -77,6 +83,7 @@ export interface DialState {
   focusOn: (v: ViewId) => void;
   toggleLabels: () => void;
   openPanel: (p: PanelId | null) => void;
+  setTab: (t: TabId) => void;
   /** Move to the previous (-1) or next (+1) storm in the catalogue. */
   stepStorm: (dir: 1 | -1) => void;
 }
@@ -89,14 +96,17 @@ function buildBundle(window: StormWindow, grid: PreparedGrid): StormBundle {
   const toIndex = (iso: string) => Math.min(window.n_times - 1, Math.max(0, (msOf(iso) - t0Ms) / step));
   let observedMin = Infinity;
   for (const v of window.series.sym_h_observed) if (v !== null && v < observedMin) observedMin = v;
-  return {
+  const bundle: StormBundle = {
     window,
     grid,
     t0Ms,
     stormSpan: [toIndex(window.storm_start), toIndex(window.storm_end)],
     peakIndex: toIndex(window.peak_time),
     observedMin: Number.isFinite(observedMin) ? observedMin : 0,
+    events: { shockIndex: null, shockJumpKmS: null },
   };
+  bundle.events = detectEvents(bundle);
+  return bundle;
 }
 
 /** Interpolate the what-if trace. Returns a fresh array so subscribers see a new reference. */
@@ -138,6 +148,7 @@ export const useDialStore = create<DialState>()((set, get) => ({
   focus: { view: "overview", nonce: 0 },
   labels: true,
   panel: null,
+  tab: "simulator",
 
   init: async () => {
     if (get().status === "loading" || get().status === "ready") return;
@@ -235,6 +246,11 @@ export const useDialStore = create<DialState>()((set, get) => ({
   focusOn: (view) => set((s) => ({ focus: { view, nonce: s.focus.nonce + 1 } })),
   toggleLabels: () => set((s) => ({ labels: !s.labels })),
   openPanel: (p) => set({ panel: p }),
+  setTab: (t) => {
+    if (get().tab === t) return;
+    // The scene stops rendering behind the explainer, so stop the replay too.
+    set(t === "explainer" ? { tab: t, playing: false, panel: null } : { tab: t });
+  },
   stepStorm: (dir) => {
     const { storms, activeStormId } = get();
     if (!storms.length) return;

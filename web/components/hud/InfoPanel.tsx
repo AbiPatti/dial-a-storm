@@ -52,7 +52,7 @@ function More({ children }: { children: ReactNode }) {
   );
 }
 
-function EarthBody({ f, peak, observedMin }: { f: LiveFrame; peak: number | null; observedMin: number | null }) {
+function EarthBody({ f, peak, observedMin, fixture }: { f: LiveFrame; peak: number | null; observedMin: number | null; fixture: boolean }) {
   const delta = f.observed !== null ? f.symH - f.observed : null;
   const peakTier = tierFor(peak ?? 0);
   return (
@@ -88,8 +88,9 @@ function EarthBody({ f, peak, observedMin }: { f: LiveFrame; peak: number | null
           negative means a stronger storm.
         </p>
         <p>
-          The what-if value is the ML surrogate (Ridge backbone + XGBoost residual), precomputed on a grid of scaled solar-wind inputs and
-          interpolated in the browser. G-tiers are an approximate SYM-H mapping, not NOAA products.
+          The what-if value comes from {fixture ? "the Burton–O\u2019Brien–McPherron physics model (FIXTURE stand-in data)" : "the ML surrogate (Ridge backbone + XGBoost residual)"},
+          precomputed on a grid of scaled solar-wind inputs and interpolated in the browser. G-tiers are approximate SYM-H bands, not NOAA&apos;s
+          Kp-based ratings.
         </p>
         {f.filled && <p className="text-alert-300">Solar-wind data has a gap here; the last valid value is held.</p>}
       </More>
@@ -106,12 +107,12 @@ function SunBody({ f, params, storm, trainMax, peakCoupling }: { f: LiveFrame; p
         <Row label={`IMF Bz${mult("bz")}`} value={fmt(f.bz, 1)} unit="nT" color={f.bz < 0 ? "#f9a8d4" : undefined} note="Southward (negative) Bz opens the magnetosphere to the solar wind." />
         <Row label={`Proton density${mult("density")}`} value={fmt(f.density, 1)} unit="cm⁻³" />
         <Row label="Dynamic pressure" value={fmt(f.pdyn, 1)} unit="nPa" />
-        <Row label="Coupling v·Bs" value={fmt(f.coupling, 1)} unit="mV/m" color="#fdba74" note="Rate at which solar-wind energy enters the magnetosphere." />
+        <Row label="Coupling v·Bs" value={fmt(f.coupling, 1)} unit="mV/m" color="#fdba74" note="Southward-field electric field v·Bs: the standard proxy for how strongly the solar wind drives the magnetosphere." />
       </dl>
       <More>
         <p>
-          Values are NASA OMNI 5-minute data, already time-shifted to Earth&apos;s bow shock, multiplied by the dials. The Sun in the scene marks the
-          source; distances are not to scale.
+          Values are NASA OMNI data (5-minute, shown at 15-minute steps), already time-shifted to Earth&apos;s bow shock, multiplied by the dials.
+          The Sun in the scene marks the source; distances are not to scale.
         </p>
         {storm && (
           <dl>
@@ -155,7 +156,10 @@ function MagnetopauseBody({ f, hist, dialled }: { f: LiveFrame; hist: LiveFrame;
         {dialled && <Row label="Δ vs historic" value={signed(f.standoffRe - hist.standoffRe, 1)} unit="Rₑ" />}
       </dl>
       <More>
-        <p>Shue et al. (1998): r₀ = (10.22 + 1.29 tanh(0.184 (Bz + 8.14))) · Pdyn^(−1/6.6), with flaring (2 / (1 + cos θ))^0.6.</p>
+        <p>
+          Shue et al. (1998) stand-off: r₀ = (10.22 + 1.29 tanh(0.184 (Bz + 8.14))) · Pdyn^(−1/6.6). The shape uses a simplified fixed flaring (2 /
+          (1 + cos θ))^0.6; Shue&apos;s exponent varies slightly with Bz and Pdyn.
+        </p>
         <p>
           The faint wire shell (when a dial is moved) is the boundary for the observed drivers. Radial distances in the scene are compressed so the
           shell stays on screen; the stand-off and the GEO ring use the same scale.
@@ -176,7 +180,10 @@ function AuroraBody({ f }: { f: LiveFrame }) {
         <Row label="Shift" value={diff === null ? "—" : `${signed(diff, 1)}°`} color={diff !== null && diff < -0.05 ? "#86efac" : undefined} />
       </dl>
       <More>
-        <p>Lat ≈ 65° − 0.05 · |SYM-H|, clamped at 38°. A rough communication aid for where aurora could be seen overhead, not a NOAA forecast.</p>
+        <p>
+          Lat ≈ 65° − 0.05 · |SYM-H| for negative SYM-H, floored at 38°. A rough communication aid for where aurora could be seen overhead, not a
+          NOAA forecast.
+        </p>
         <p>The oval sits further poleward on the dayside, brightens with storm depth and reddens in the strongest storms.</p>
       </More>
     </>
@@ -230,7 +237,7 @@ export default function InfoPanel() {
       {!f.ready ? (
         <p className="text-[12px] text-slate-500">Loading storm…</p>
       ) : selected === "earth" ? (
-        <EarthBody f={f} peak={tracePeak?.value ?? null} observedMin={bundle?.observedMin ?? null} />
+        <EarthBody f={f} peak={tracePeak?.value ?? null} observedMin={bundle?.observedMin ?? null} fixture={manifest?.model.kind === "burton_fixture"} />
       ) : selected === "sun" ? (
         <SunBody f={f} params={params} storm={storm} trainMax={trainMax} peakCoupling={peakCoupling} />
       ) : selected === "magnetopause" ? (

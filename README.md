@@ -2,7 +2,8 @@
 
 Replay the eight strongest geomagnetic storms of 2010–2026, scale the solar wind that drove them
 (southward Bz, speed, density), and see how a machine-learning model of the SYM-H index responds.
-A WebGL scene of the Sun, solar wind, magnetosphere and aurora runs alongside the charts.
+The Simulator tab is an interactive WebGL scene of the Sun, solar wind, magnetosphere and aurora;
+the Explainer tab walks through the physics, the model and its honest hold-out test.
 
 Built for the Sheridan Datathon 2026.
 
