@@ -12,9 +12,9 @@ model driven by the same scaled solar wind:
 
 The model is integrated causally at 5-minute steps with the exact exponential update, starting
 from Dst* = 0 at the beginning of each 36 h lead-in. Every file is labelled "source": "FIXTURE".
-Running `python -m src.pipeline` overwrites them with the ML artifacts.
+Running `python -m dial_a_storm.pipeline` overwrites them with the ML artifacts.
 
-Run: python -m src.make_fixtures
+Run: python -m dial_a_storm.make_fixtures
 """
 
 from __future__ import annotations

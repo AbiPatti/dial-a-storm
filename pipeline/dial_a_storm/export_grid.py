@@ -17,7 +17,7 @@ Outputs
 * <out>/storm_windows/{id}.json : observed series, drivers, baseline predictions
 * <out>/scenario_grid/{id}.json : flat trace tensor [bz][speed][density][time], integer nT
 
-Run: python -m src.export_grid
+Run: python -m dial_a_storm.export_grid
 """
 
 from __future__ import annotations

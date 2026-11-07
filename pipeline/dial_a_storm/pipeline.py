@@ -1,8 +1,8 @@
 """End-to-end pipeline: tests -> load -> storms -> features -> model -> scenario grid export.
 
-Run from data/:
-    python -m src.pipeline                      # writes web/public/data/ (replaces FIXTURE files)
-    python -m src.pipeline --out /tmp/preview   # writes elsewhere
+Run from pipeline/:
+    python -m dial_a_storm                        # writes web/public/data/ (replaces FIXTURE files)
+    python -m dial_a_storm.pipeline --out /tmp/x  # writes elsewhere
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ def main(argv: list[str] | None = None) -> int:
     if not args.skip_tests:
         import pytest
 
-        code = pytest.main(["-q", str(config.DATA_DIR / "tests")])
+        code = pytest.main(["-q", str(config.TESTS_DIR)])
         if code != 0:
             log.error("causality tests failed; refusing to export")
             return int(code)

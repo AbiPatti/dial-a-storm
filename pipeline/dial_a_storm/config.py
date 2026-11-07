@@ -13,12 +13,12 @@ import pandas as pd
 
 SCHEMA_VERSION = 1
 
-DATA_DIR = Path(__file__).resolve().parents[1]
-REPO_ROOT = DATA_DIR.parent
-RAW_CSV = Path(
-    os.environ.get("OMNI_CSV", REPO_ROOT / "nasa_omni_solar_wind_storms_5min_2010-2026.csv")
-)
-CACHE_DIR = DATA_DIR / "cache"
+PIPELINE_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = PIPELINE_DIR.parent
+TESTS_DIR = PIPELINE_DIR / "tests"
+RAW_DIR = PIPELINE_DIR / "data" / "raw"
+RAW_CSV = Path(os.environ.get("OMNI_CSV", RAW_DIR / "nasa_omni_solar_wind_storms_5min_2010-2026.csv"))
+CACHE_DIR = PIPELINE_DIR / "data" / "cache"
 MODEL_DIR = CACHE_DIR / "models"
 OMNI_PARQUET = CACHE_DIR / "omni_5min.parquet"
 FEATURES_PARQUET = CACHE_DIR / "features_15min.parquet"

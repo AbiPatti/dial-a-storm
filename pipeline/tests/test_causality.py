@@ -15,8 +15,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from src import config
-from src.features import (
+from dial_a_storm import config
+from dial_a_storm.features import (
     BANNED_COLUMNS,
     DRIVER_COLUMNS,
     FEATURE_COLUMNS,
@@ -27,8 +27,8 @@ from src.features import (
     build_features,
     southward_duration_hours,
 )
-from src.load import causal_fill_short_gaps
-from src.physics import coupling, dynamic_pressure, scale_drivers, southward_bz
+from dial_a_storm.load import causal_fill_short_gaps
+from dial_a_storm.physics import coupling, dynamic_pressure, scale_drivers, southward_bz
 
 N_DAYS = 4
 

@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import ControlDeck from "@/components/deck/ControlDeck";
 import { LiveComparisonChart } from "@/components/deck/ComparisonChart";
 import MetricsBanner from "@/components/deck/MetricsBanner";
-import HonestTestSection from "@/components/ui/HonestTestSection";
+import HoldoutSection from "@/components/ui/HoldoutSection";
 import { formatDate } from "@/lib/live";
 import { useDialStore } from "@/lib/store";
 import { usePlayback } from "@/lib/usePlayback";
@@ -115,8 +115,8 @@ export default function Page() {
               <p className="mt-1 break-words text-slate-300">{error}</p>
               <p className="mt-2 text-slate-400">
                 Expected static files under <code className="font-mono">web/public/data/</code>. Regenerate them with{" "}
-                <code className="font-mono">python -m src.pipeline</code> (or <code className="font-mono">python -m src.make_fixtures</code>) from{" "}
-                <code className="font-mono">data/</code>.
+                <code className="font-mono">python -m dial_a_storm.pipeline</code> (or <code className="font-mono">python -m dial_a_storm.make_fixtures</code>) from{" "}
+                <code className="font-mono">pipeline/</code>.
               </p>
             </div>
           )}
@@ -130,7 +130,7 @@ export default function Page() {
         {/* Dark backdrop so narrative text stays readable over the bright scene. */}
         <div className="bg-gradient-to-b from-void/0 via-void/90 to-void">
           <HowItWorks />
-          <HonestTestSection />
+          <HoldoutSection />
         </div>
 
         <footer className="mx-auto max-w-6xl px-4 pb-12 pt-4 text-xs text-slate-500 lg:px-6">

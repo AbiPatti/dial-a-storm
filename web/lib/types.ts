@@ -1,6 +1,6 @@
 /**
  * Zod schemas for every static artifact in /public/data. These mirror docs/CONTRACTS.md and the
- * Python writers in data/src. Any change here must be made in all three places.
+ * Python writers in pipeline/dial_a_storm. Any change here must be made in all three places.
  */
 import { z } from "zod";
 

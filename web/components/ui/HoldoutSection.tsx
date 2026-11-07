@@ -95,7 +95,7 @@ function MetricsTable({ manifest }: { manifest: Manifest }) {
   );
 }
 
-export default function HonestTestSection() {
+export default function HoldoutSection() {
   const manifest = useDialStore((s) => s.manifest);
   const storms = useDialStore((s) => s.storms);
   const [win, setWin] = useState<StormWindow | null>(null);
@@ -155,7 +155,7 @@ export default function HonestTestSection() {
         <div className="mt-6 rounded-lg border border-alert-500/50 bg-alert-500/10 px-4 py-3 text-sm text-alert-300">
           <span className="mr-2 rounded bg-alert-500 px-1.5 py-0.5 font-mono text-[11px] font-bold text-void">FIXTURE</span>
           These numbers come from the Burton–O&apos;Brien–McPherron physics model on real OMNI data, shipped so the app runs before the ML
-          pipeline. Run <code className="font-mono">python -m src.pipeline</code> in <code className="font-mono">data/</code> to replace them
+          pipeline. Run <code className="font-mono">python -m dial_a_storm.pipeline</code> in <code className="font-mono">pipeline/</code> to replace them
           with the Ridge + XGBoost hybrid and its pure-XGBoost comparison.
         </div>
       )}
