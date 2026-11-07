@@ -35,9 +35,9 @@ function PeakCard({ label, value, observed, color, time, obsTime }: { label: str
   const lag = hoursBetween(time, obsTime);
   const tier = tierFor(value ?? 0);
   return (
-    <div className="glass p-4">
-      <div className="text-[11px] uppercase tracking-[0.14em] text-slate-400">{label}</div>
-      <div className="mt-1 font-mono text-3xl tabular-nums" style={{ color }}>
+    <div className="rounded-xl bg-white/[0.035] p-3">
+      <div className="text-[11px] leading-tight text-slate-400">{label}</div>
+      <div className="mt-1 font-mono text-2xl tabular-nums" style={{ color }}>
         {value === null ? "—" : value.toFixed(0)}
         <span className="ml-1 text-sm text-slate-400">nT</span>
       </div>
@@ -59,8 +59,8 @@ function MetricsTable({ manifest }: { manifest: Manifest }) {
   };
   const holdout = manifest.holdout.metrics;
   return (
-    <div className="glass overflow-x-auto p-4">
-      <table className="w-full min-w-[560px] text-left text-sm">
+    <div className="overflow-x-auto">
+      <table className="w-full min-w-[520px] text-left text-[12.5px]">
         <caption className="mb-2 text-left text-[11px] uppercase tracking-[0.14em] text-slate-400">
           Out-of-time error (nT) at 15-min cadence · storm-time = observed SYM-H &lt; −50 nT
         </caption>
@@ -138,12 +138,12 @@ export default function HoldoutSection() {
   const span: [number, number] | null = win ? [(Date.parse(win.storm_start) - t0Ms) / stepMs, (Date.parse(win.storm_end) - t0Ms) / stepMs] : null;
 
   return (
-    <section id="honest-test" className="mx-auto max-w-6xl px-4 py-20 lg:px-6">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-rose-300">The honest test</p>
-      <h2 className="mt-2 text-3xl font-semibold text-white md:text-4xl">
+    <section id="honest-test" aria-label="Hold-out test">
+      <p className="eyebrow !text-rose-300">The honest test</p>
+      <h2 className="mt-1.5 text-xl font-semibold leading-snug text-white">
         Can it see a storm it has never seen? {h.name}, {h.observed_peak_nT?.toFixed(0)} nT
       </h2>
-      <p className="mt-4 max-w-3xl text-slate-300">
+      <p className="mt-3 text-[13px] leading-relaxed text-slate-300">
         The model was fitted on 2010–2019 and tuned on 2020–2022. The deepest training-era storm in our top 8 reached{" "}
         {deepestTrain !== null ? `${deepestTrain.toFixed(0)} nT` : "about −234 nT"}. The 10–11 May 2024 storm, the strongest in two
         decades, lies in the untouched 2023–2026 test period: no fitting, early stopping or hyper-parameter choice ever saw it. Its peak
@@ -152,7 +152,7 @@ export default function HoldoutSection() {
       </p>
 
       {isFixture && (
-        <div className="mt-6 rounded-lg border border-alert-500/50 bg-alert-500/10 px-4 py-3 text-sm text-alert-300">
+        <div className="mt-4 rounded-lg border border-alert-500/50 bg-alert-500/10 px-3 py-2.5 text-[12.5px] text-alert-300">
           <span className="mr-2 rounded bg-alert-500 px-1.5 py-0.5 font-mono text-[11px] font-bold text-void">FIXTURE</span>
           These numbers come from the Burton–O&apos;Brien–McPherron physics model on real OMNI data, shipped so the app runs before the ML
           pipeline. Run <code className="font-mono">python -m dial_a_storm.pipeline</code> in <code className="font-mono">pipeline/</code> to replace them
@@ -160,14 +160,14 @@ export default function HoldoutSection() {
         </div>
       )}
 
-      <div className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="mt-5 grid grid-cols-2 gap-2">
         <PeakCard label="Observed peak" value={h.observed_peak_nT} observed={null} color="#f8fafc" />
         <PeakCard label={MODEL_LABELS[key]} value={primaryPeak} observed={h.observed_peak_nT} color={MODEL_COLORS[key]} time={h.predicted_peak_time[key]} obsTime={h.observed_peak_time} />
         {ridgePeak !== null && <PeakCard label={MODEL_LABELS.ridge} value={ridgePeak} observed={h.observed_peak_nT} color={MODEL_COLORS.ridge} time={h.predicted_peak_time.ridge} obsTime={h.observed_peak_time} />}
         {xgbPeak !== null && <PeakCard label={MODEL_LABELS.xgb_only} value={xgbPeak} observed={h.observed_peak_nT} color={MODEL_COLORS.xgb_only} time={h.predicted_peak_time.xgb_only} obsTime={h.observed_peak_time} />}
       </div>
 
-      <div className="glass mt-4 p-4">
+      <div className="mt-3 rounded-xl bg-white/[0.025] p-3">
         {win && span ? (
           <ComparisonChart
             t0Ms={t0Ms}
@@ -175,11 +175,11 @@ export default function HoldoutSection() {
             n={win.n_times}
             series={series}
             stormSpan={span}
-            height={280}
+            height={240}
             ariaLabel={`Observed versus predicted SYM-H during the ${h.name}`}
           />
         ) : (
-          <div className="grid h-[280px] place-items-center text-sm text-slate-400">{error ?? "Loading hold-out window…"}</div>
+          <div className="grid h-[240px] place-items-center text-sm text-slate-400">{error ?? "Loading hold-out window…"}</div>
         )}
         <p className="mt-2 font-mono text-[11px] text-slate-500">
           Window {formatUtc(Date.parse(h.window_start), true)} → {formatUtc(Date.parse(h.window_end), true)} · observed minimum at{" "}
@@ -187,10 +187,9 @@ export default function HoldoutSection() {
         </p>
       </div>
 
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
-        <MetricsTable manifest={manifest} />
-        <div className="glass space-y-3 p-5 text-sm text-slate-300">
-          <h3 className="text-base font-semibold text-white">What the result says</h3>
+      <div className="mt-5 space-y-5">
+        <div className="space-y-3 text-[13px] leading-relaxed text-slate-300">
+          <h3 className="text-[14px] font-semibold text-white">What the result says</h3>
           {xgbPeak !== null && primaryPeak !== null && h.observed_peak_nT !== null ? (
             <ul className="list-disc space-y-2 pl-5">
               <li>
@@ -212,7 +211,7 @@ export default function HoldoutSection() {
               ML comparison (hybrid vs. pure XGBoost) appears here after the pipeline runs.
             </p>
           )}
-          <h3 className="pt-2 text-base font-semibold text-white">Limitations</h3>
+          <h3 className="pt-2 text-[14px] font-semibold text-white">Limitations</h3>
           <ul className="list-disc space-y-1.5 pl-5 text-slate-400">
             <li>Drivers are OMNI data already time-shifted to the bow-shock nose, so this is a nowcast of SYM-H from upstream conditions, not a forecast from L1.</li>
             <li>Only solar-wind inputs are used. SYM-H, AE, AL, PCN and proton flux are excluded so the model cannot copy Earth&apos;s own response.</li>
@@ -221,6 +220,12 @@ export default function HoldoutSection() {
             <li>G-tiers and the auroral boundary are rough SYM-H mappings for communication. They are not NOAA products.</li>
           </ul>
         </div>
+        <details className="rounded-xl bg-white/[0.025] p-3" open>
+          <summary className="cursor-pointer text-[13px] font-semibold text-white">Error metrics by split</summary>
+          <div className="mt-3">
+            <MetricsTable manifest={manifest} />
+          </div>
+        </details>
       </div>
     </section>
   );

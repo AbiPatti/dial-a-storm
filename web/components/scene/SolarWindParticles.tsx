@@ -3,7 +3,7 @@
 import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
-import { SCENE, standoffToScene } from "@/lib/glsl";
+import { MAGNETOPAUSE_GLSL, SCENE } from "@/lib/glsl";
 import { liveFrame } from "@/lib/live";
 import { useDialStore } from "@/lib/store";
 
@@ -15,7 +15,8 @@ import { useDialStore } from "@/lib/store";
  *   smoothly instead of teleporting particles.
  * - Density controls the visible fraction of particles and their brightness.
  * - Particles are deflected around a magnetopause r(theta) = r0 (2 / (1 + cos theta))^0.6,
- *   where r0 follows the Shue et al. (1998) stand-off for the current Bz and Pdyn.
+ *   where r0 follows the Shue et al. (1998) stand-off for the current Bz and Pdyn. The shape is
+ *   mapped to scene units exactly like the Magnetopause shell (lib/glsl.ts), so they line up.
  */
 
 const vertex = /* glsl */ `
@@ -24,7 +25,8 @@ attribute float aKeep;
 uniform float uPhase;
 uniform float uStartX;
 uniform float uEndX;
-uniform float uStandoff;
+uniform float uStandoffRe;
+uniform float uEarthR;
 uniform float uDensityFrac;
 uniform float uSize;
 uniform float uPixelRatio;
@@ -32,6 +34,7 @@ uniform float uSpeedNorm;
 varying float vAlpha;
 varying float vSpeed;
 varying float vCompress;
+${MAGNETOPAUSE_GLSL}
 void main() {
   if (aKeep > uDensityFrac) {
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
@@ -50,7 +53,7 @@ void main() {
 
   float d = max(length(p), 1e-4);
   float cosT = -p.x / d;
-  float rmp = uStandoff * pow(2.0 / (1.0 + max(cosT, -0.6)), 0.6);
+  float rmp = magnetopauseRadius(uStandoffRe, cosT, uEarthR);
   float k = smoothstep(rmp * 1.35, rmp * 0.98, d);
   float target = max(d, rmp * (1.02 + 0.1 * aSeed.w));
   p = (p / d) * mix(d, target, k);
@@ -60,7 +63,7 @@ void main() {
   vAlpha = smoothstep(0.0, 0.05, life) * smoothstep(1.0, 0.86, life);
 
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
-  gl_PointSize = uSize * uPixelRatio * (0.7 + aSeed.w) * 30.0 / max(-mv.z, 0.5);
+  gl_PointSize = min(uSize * uPixelRatio * (0.7 + aSeed.w) * 30.0 / max(-mv.z, 0.5), 5.0 * uPixelRatio);
   gl_Position = projectionMatrix * mv;
 }
 `;
@@ -90,7 +93,7 @@ interface SolarWindParticlesProps {
 export default function SolarWindParticles({ count = 20_000 }: SolarWindParticlesProps) {
   const dpr = useThree((s) => s.viewport.dpr);
   const phase = useRef(0);
-  const smooth = useRef({ speed: 400, density: 5, standoff: standoffToScene(10) });
+  const smooth = useRef({ speed: 400, density: 5, standoff: 10 });
 
   const geometry = useMemo(() => {
     const g = new THREE.BufferGeometry();
@@ -122,7 +125,8 @@ export default function SolarWindParticles({ count = 20_000 }: SolarWindParticle
           uPhase: { value: 0 },
           uStartX: { value: SCENE.windStartX },
           uEndX: { value: SCENE.windEndX },
-          uStandoff: { value: standoffToScene(10) },
+          uStandoffRe: { value: 10 },
+          uEarthR: { value: SCENE.earthRadius },
           uDensityFrac: { value: 0.35 },
           uSize: { value: 1.1 },
           uPixelRatio: { value: 1 },
@@ -152,7 +156,7 @@ export default function SolarWindParticles({ count = 20_000 }: SolarWindParticle
     const sm = smooth.current;
     sm.speed = THREE.MathUtils.damp(sm.speed, f.speed, 3, dt);
     sm.density = THREE.MathUtils.damp(sm.density, f.density, 3, dt);
-    sm.standoff = THREE.MathUtils.damp(sm.standoff, standoffToScene(f.standoffRe), 3, dt);
+    sm.standoff = THREE.MathUtils.damp(sm.standoff, f.standoffRe, 3, dt);
 
     // ~22 s Sun-to-Earth transit at 400 km/s, ~9 s at 1000 km/s (visual time, not physical).
     phase.current = (phase.current + Math.min(dt, 0.1) * 0.045 * (sm.speed / 400)) % 1000;
@@ -161,7 +165,7 @@ export default function SolarWindParticles({ count = 20_000 }: SolarWindParticle
     u.uSpeedNorm.value = THREE.MathUtils.clamp((sm.speed - 300) / 700, 0, 1);
     u.uDensityFrac.value = THREE.MathUtils.clamp(0.12 + sm.density / 25, 0.12, 1);
     u.uBrightness.value = 0.7 + 0.5 * Math.min(1, sm.density / 30);
-    u.uStandoff.value = sm.standoff;
+    u.uStandoffRe.value = sm.standoff;
     u.uPixelRatio.value = dpr;
   });
 

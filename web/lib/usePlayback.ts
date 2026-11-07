@@ -5,7 +5,7 @@ import { useDialStore } from "./store";
 
 /**
  * Drives playback with requestAnimationFrame (independent of the WebGL loop, so the chart keeps
- * working if WebGL is unavailable) and binds the space bar to play/pause.
+ * working if WebGL is unavailable). Keyboard shortcuts live in useShortcuts.ts.
  */
 export function usePlayback(): void {
   useEffect(() => {
@@ -19,17 +19,8 @@ export function usePlayback(): void {
     };
     raf = requestAnimationFrame(loop);
 
-    const onKey = (e: KeyboardEvent) => {
-      if (e.code !== "Space") return;
-      const el = e.target as HTMLElement | null;
-      if (el && (el.tagName === "INPUT" || el.tagName === "SELECT" || el.tagName === "BUTTON" || el.isContentEditable)) return;
-      e.preventDefault();
-      useDialStore.getState().togglePlay();
-    };
-    window.addEventListener("keydown", onKey);
     return () => {
       cancelAnimationFrame(raf);
-      window.removeEventListener("keydown", onKey);
     };
   }, []);
 }

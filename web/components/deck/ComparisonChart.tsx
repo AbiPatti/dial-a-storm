@@ -30,10 +30,16 @@ export interface ComparisonChartProps {
   height?: number;
   yDomain?: [number, number];
   showLegend?: boolean;
+  /** Draw the UTC time above the playback needle (off when the host shows the time itself). */
+  cursorLabel?: boolean;
+  margins?: typeof M;
 }
 
-const M = { top: 14, right: 58, bottom: 24, left: 46 };
+export const M = { top: 14, right: 58, bottom: 24, left: 46 };
+/** Margins for the compact dock chart (tier lines without right-hand labels). */
+export const COMPACT_M = { top: 6, right: 12, bottom: 20, left: 40 };
 const HOUR_MS = 3_600_000;
+const DEFAULT_M = M;
 
 function useElementWidth<T extends HTMLElement>(fallback: number) {
   const ref = useRef<T>(null);
@@ -120,6 +126,8 @@ export default function ComparisonChart({
   height = 220,
   yDomain,
   showLegend = true,
+  cursorLabel = true,
+  margins: M = DEFAULT_M,
 }: ComparisonChartProps) {
   const uid = useId().replace(/:/g, "");
   const [wrapRef, width] = useElementWidth<HTMLDivElement>(720);
@@ -194,18 +202,22 @@ export default function ComparisonChart({
             </text>
           </g>
         ))}
-        <text x={12} y={M.top + plotH / 2} transform={`rotate(-90 12 ${M.top + plotH / 2})`} textAnchor="middle" className="fill-slate-500 text-[10px]">
-          SYM-H (nT)
-        </text>
+        {M.left > 44 && (
+          <text x={12} y={M.top + plotH / 2} transform={`rotate(-90 12 ${M.top + plotH / 2})`} textAnchor="middle" className="fill-slate-500 text-[10px]">
+            SYM-H (nT)
+          </text>
+        )}
 
         {/* NOAA G-scale thresholds */}
         {THRESHOLDS.map(({ value, tier }) =>
           value > lo && value < hi ? (
             <g key={`t${value}`}>
               <line x1={M.left} x2={M.left + plotW} y1={y(value)} y2={y(value)} stroke={tier.color} strokeOpacity={0.55} strokeDasharray="3 4" />
-              <text x={M.left + plotW + 6} y={y(value)} dy="0.32em" className="font-mono text-[10px]" fill={tier.color}>
-                {tier.display}
-              </text>
+              {M.right > 40 && (
+                <text x={M.left + plotW + 6} y={y(value)} dy="0.32em" className="font-mono text-[10px]" fill={tier.color}>
+                  {tier.display}
+                </text>
+              )}
             </g>
           ) : null,
         )}
@@ -256,9 +268,11 @@ export default function ComparisonChart({
               const v = sampleNullable(s.values, cursor);
               return v === null ? null : <circle key={s.id} cx={cx} cy={y(Math.min(hi, Math.max(lo, v)))} r={3.2} fill={s.color} stroke="#03050c" strokeWidth={1} />;
             })}
-            <text x={Math.min(Math.max(cx, M.left + 70), M.left + plotW - 70)} y={M.top - 3} textAnchor="middle" className="fill-slate-200 font-mono text-[10px]">
-              {formatUtc(t0Ms + cursor * stepMs)}
-            </text>
+            {cursorLabel && (
+              <text x={Math.min(Math.max(cx, M.left + 70), M.left + plotW - 70)} y={M.top - 3} textAnchor="middle" className="fill-slate-200 font-mono text-[10px]">
+                {formatUtc(t0Ms + cursor * stepMs)}
+              </text>
+            )}
           </g>
         )}
 
@@ -294,7 +308,7 @@ export default function ComparisonChart({
 }
 
 /** Store-connected chart: observed SYM-H (ghost) vs the interpolated what-if trace. */
-export function LiveComparisonChart({ height = 210 }: { height?: number }) {
+export function LiveComparisonChart({ height = 210, compact = false }: { height?: number; compact?: boolean }) {
   const bundle = useDialStore((s) => s.bundle);
   const trace = useDialStore((s) => s.activeTrace);
   const tracePeak = useDialStore((s) => s.tracePeak);
@@ -332,7 +346,11 @@ export function LiveComparisonChart({ height = 210 }: { height?: number }) {
   }, [bundle, tracePeak]);
 
   if (!bundle || !trace) {
-    return <div className="grid h-[210px] place-items-center text-sm text-slate-400">Loading storm…</div>;
+    return (
+      <div className="grid place-items-center text-sm text-slate-500" style={{ height }}>
+        Loading storm…
+      </div>
+    );
   }
 
   return (
@@ -349,6 +367,9 @@ export function LiveComparisonChart({ height = 210 }: { height?: number }) {
       stormSpan={bundle.stormSpan}
       height={height}
       yDomain={yDomain}
+      showLegend={!compact}
+      cursorLabel={!compact}
+      margins={compact ? COMPACT_M : M}
       ariaLabel={`SYM-H for ${bundle.window.name}: observed versus what-if prediction`}
     />
   );
