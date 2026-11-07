@@ -38,7 +38,6 @@ export default function Headline() {
   const trace = useDialStore((s) => s.activeTrace);
   const params = useDialStore((s) => s.params);
   const cursor = useDialStore((s) => s.cursor);
-  const inRange = useDialStore((s) => s.inRange);
   const storms = useDialStore((s) => s.storms);
   const activeId = useDialStore((s) => s.activeStormId);
 
@@ -70,13 +69,6 @@ export default function Headline() {
           </div>
         </div>
       </div>
-
-      {bundle && !inRange && (
-        <p role="alert" className="mt-3 inline-flex items-center gap-2 rounded-full border border-ember-400/40 px-3 py-1 text-[11px] text-ember-300">
-          <span className="h-1.5 w-1.5 rounded-full bg-ember-400" aria-hidden="true" />
-          BEYOND TRAINING DATA · the model is extrapolating
-        </p>
-      )}
     </section>
   );
 }

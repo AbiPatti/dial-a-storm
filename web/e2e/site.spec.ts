@@ -98,7 +98,6 @@ test.describe("controls", () => {
     await page.keyboard.press("End");
     await expect(dial(page)).toHaveAttribute("aria-valuenow", "3");
     await expect(heroValue(page)).not.toHaveText(baseline);
-    await expect(page.getByRole("alert").filter({ hasText: "BEYOND TRAINING DATA" })).toBeVisible();
     await expect(reset).toBeEnabled();
 
     await page.keyboard.press("Home");

@@ -203,7 +203,7 @@ export default function HoldoutSection() {
               </li>
               <li>
                 It still under-predicts by {Math.abs(h.observed_peak_nT - primaryPeak).toFixed(0)} nT. Treat superstorm what-ifs as
-                lower bounds, especially when the amber BEYOND TRAINING DATA flag is on.
+                lower bounds, especially when the solar wind is pushed past anything in the 2010–2019 training data.
               </li>
             </ul>
           ) : (
