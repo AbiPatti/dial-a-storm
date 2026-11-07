@@ -1,6 +1,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
+import { pickHandlers } from "./pick";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { NOISE_GLSL, SCENE } from "@/lib/glsl";
@@ -153,7 +154,7 @@ export default function Sun() {
   const r = SCENE.sunRadius;
   return (
     <group position={SCENE.sunPosition}>
-      <mesh>
+      <mesh userData={{ blocksShell: true }} {...pickHandlers("sun")}>
         <sphereGeometry args={[r, 96, 64]} />
         <primitive object={surface} attach="material" />
       </mesh>

@@ -12,6 +12,13 @@ import { DEFAULT_PARAMS, type Manifest, type Params, type PreparedGrid, type Sto
 
 export type LoadStatus = "idle" | "loading" | "ready" | "error";
 
+/** Selectable objects in the 3D scene. */
+export type SceneObject = "sun" | "earth" | "magnetopause" | "aurora";
+/** Camera presets the rig can fly to. */
+export type ViewId = "overview" | SceneObject;
+/** Level-3 panels (only one open at a time). */
+export type PanelId = "storms" | "model" | "help";
+
 export interface StormBundle {
   window: StormWindow;
   grid: PreparedGrid;
@@ -46,6 +53,14 @@ export interface DialState {
   /** Incremented on every Simulate press, so UI can react to a new run. */
   simulationId: number;
 
+  /** Scene interaction (UI-only state; the scene reads it in useFrame via getState()). */
+  selected: SceneObject | null;
+  hovered: SceneObject | null;
+  /** Camera fly-to request; `nonce` changes on every request so repeats re-trigger. */
+  focus: { view: ViewId; nonce: number };
+  labels: boolean;
+  panel: PanelId | null;
+
   init: () => Promise<void>;
   selectStorm: (id: string) => Promise<void>;
   setParam: (key: keyof Params, value: number) => void;
@@ -57,6 +72,13 @@ export interface DialState {
   seek: (index: number) => void;
   tick: (dtSeconds: number) => void;
   setPlaybackSeconds: (s: number) => void;
+  select: (o: SceneObject | null) => void;
+  hover: (o: SceneObject | null) => void;
+  focusOn: (v: ViewId) => void;
+  toggleLabels: () => void;
+  openPanel: (p: PanelId | null) => void;
+  /** Move to the previous (-1) or next (+1) storm in the catalogue. */
+  stepStorm: (dir: 1 | -1) => void;
 }
 
 const msOf = (iso: string) => Date.parse(iso);
@@ -111,6 +133,12 @@ export const useDialStore = create<DialState>()((set, get) => ({
   playbackSeconds: 24,
   simulationId: 0,
 
+  selected: null,
+  hovered: null,
+  focus: { view: "overview", nonce: 0 },
+  labels: true,
+  panel: null,
+
   init: async () => {
     if (get().status === "loading" || get().status === "ready") return;
     set({ status: "loading", error: null });
@@ -139,7 +167,8 @@ export const useDialStore = create<DialState>()((set, get) => ({
       set({
         bundle,
         stormStatus: "ready",
-        cursor: 0,
+        // Open at the observed peak, so the scene shows the storm at full strength right away.
+        cursor: bundle.peakIndex,
         ...computeScenario(grid, params),
       });
     } catch (err) {
@@ -198,4 +227,19 @@ export const useDialStore = create<DialState>()((set, get) => ({
   },
 
   setPlaybackSeconds: (s) => set({ playbackSeconds: Math.max(4, Math.min(120, s)) }),
+
+  select: (o) => set({ selected: o }),
+  hover: (o) => {
+    if (get().hovered !== o) set({ hovered: o });
+  },
+  focusOn: (view) => set((s) => ({ focus: { view, nonce: s.focus.nonce + 1 } })),
+  toggleLabels: () => set((s) => ({ labels: !s.labels })),
+  openPanel: (p) => set({ panel: p }),
+  stepStorm: (dir) => {
+    const { storms, activeStormId } = get();
+    if (!storms.length) return;
+    const i = storms.findIndex((s) => s.id === activeStormId);
+    const next = storms[(Math.max(0, i) + dir + storms.length) % storms.length];
+    void get().selectStorm(next.id);
+  },
 }));

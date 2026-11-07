@@ -1,6 +1,7 @@
 "use client";
 
 import { useFrame } from "@react-three/fiber";
+import { pickHandlers } from "./pick";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
 import { NOISE_GLSL, SCENE } from "@/lib/glsl";
@@ -166,7 +167,7 @@ export default function Earth({ children }: EarthProps) {
 
   return (
     <group rotation={[0, 0, SCENE.tilt]}>
-      <mesh ref={spinRef}>
+      <mesh ref={spinRef} userData={{ blocksShell: true }} {...pickHandlers("earth")}>
         <sphereGeometry args={[SCENE.earthRadius, 128, 96]} />
         <primitive object={surface} attach="material" />
       </mesh>

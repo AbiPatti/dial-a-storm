@@ -94,3 +94,31 @@ export const SCENE = {
 export function standoffToScene(r0Re: number): number {
   return SCENE.earthRadius * (1 + 0.32 * (Math.max(1.5, r0Re) - 1));
 }
+
+/** Geostationary orbit radius in Earth radii. */
+export const GEO_RE = 6.6;
+
+/**
+ * Shue et al. (1998) flaring factor r(theta) / r0 = (2 / (1 + cos theta))^0.6, with cos theta
+ * clamped at -0.6 so the tail stays finite. Mirrored in the SolarWindParticles vertex shader.
+ */
+export function shueFlare(cosTheta: number): number {
+  return Math.pow(2 / (1 + Math.max(cosTheta, -0.6)), 0.6);
+}
+
+/**
+ * Scene-space magnetopause radius in the direction with angle cos(theta) from the Sun line. The
+ * physical distance r0 * flare is mapped through `standoffToScene`, so the shell, the particle
+ * deflection and the geostationary ring (standoffToScene(GEO_RE)) share one radial scale.
+ */
+export function magnetopauseSceneRadius(r0Re: number, cosTheta: number): number {
+  return standoffToScene(r0Re * shueFlare(cosTheta));
+}
+
+/** GLSL twin of `magnetopauseSceneRadius` (needs uniform uEarthR = SCENE.earthRadius). */
+export const MAGNETOPAUSE_GLSL = /* glsl */ `
+float magnetopauseRadius(float r0Re, float cosT, float earthR) {
+  float rRe = r0Re * pow(2.0 / (1.0 + max(cosT, -0.6)), 0.6);
+  return earthR * (1.0 + 0.32 * (max(1.5, rRe) - 1.0));
+}
+`;

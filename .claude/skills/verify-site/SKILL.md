@@ -46,12 +46,16 @@ This builds the production site, serves it on port 3100 (a running `npm run dev`
 affected) and drives it in headless Chromium. `web/e2e/site.spec.ts` covers:
 
 - every JSON artifact is served (manifest, storms, 8 windows, 8 scenario grids)
-- the page loads with no console errors or uncaught exceptions; header, source badge, WebGL canvas,
-  chart, "How it works" and hold-out sections render
-- each of the 8 storms can be selected and loads its data
-- the Bz / speed / density sliders change the prediction, the BEYOND TRAINING DATA warning appears
-  at extreme settings, and Reset restores the baseline
-- playback: Play, Pause, scrub, Restart, replay speed and Simulate
+- the page loads with no console errors or uncaught exceptions into a full-screen, non-scrolling
+  scene: header, source badge, WebGL canvas, timeline chart and the four scene-object labels
+- each of the 8 storms can be selected from the catalogue popover, and `[` / `]` step storms
+- the Model & validation drawer shows the hold-out test and "How it works"
+- the Bz / speed / density dials change the prediction, the BEYOND TRAINING DATA warning is absent
+  for weak driving and appears at extreme settings, Max and Reset (button and `R`) work
+- playback: Play, Pause, scrub, arrow-key stepping, Home, replay speed, Simulate and Space
+- scene interaction: selecting Earth / magnetopause / solar wind / aurora opens their detail card,
+  Esc and Close dismiss it, and the Labels toggle hides and restores the labels
+- the guide opens on a first visit, its superstorm demo runs, and it stays closed after reload
 
 First run on a new machine: `npx playwright install chromium`.
 To run one test: `npx playwright test -g "playback"`. On failure, look at the screenshot and trace
