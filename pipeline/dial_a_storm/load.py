@@ -13,9 +13,9 @@ Steps
    * Pdyn = 1.6726e-6 n v^2 vs OMNI flow pressure (OMNI uses 2e-6 n v^2 to include ~4% alphas,
      so the expected ratio OMNI / ours is 2 / 1.6726 = 1.196).
    * Signed Ey = -v Bz 1e-3 vs OMNI electric field; rectified Ey = v Bs 1e-3.
-6. Write `data/cache/omni_5min.parquet` and a JSON validation report.
+6. Write `pipeline/data/cache/omni_5min.parquet` and a JSON validation report.
 
-Run: python -m src.load
+Run: python -m dial_a_storm.load
 """
 
 from __future__ import annotations

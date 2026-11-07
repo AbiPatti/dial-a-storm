@@ -10,10 +10,10 @@ Splits: train 2010-2019, validate 2020-2022 (Ridge alpha selection, XGBoost earl
 2023-2026. The Gannon storm window lies inside the test years and is reported separately.
 
 Outputs
-* data/cache/models/{ridge.json, xgb_residual.json, xgb_only.json, meta.json}
+* pipeline/data/cache/models/{ridge.json, xgb_residual.json, xgb_only.json, meta.json}
 * <out_dir>/manifest.json
 
-Run: python -m src.model
+Run: python -m dial_a_storm.model
 """
 
 from __future__ import annotations

@@ -14,7 +14,7 @@ Every feature at time t is a function of solar-wind drivers at times <= t only:
 
 Units: coupling c = v * Bs * 1e-3 in mV/m; integrals in mV/m * h; durations in hours.
 
-Run: python -m src.features   (writes data/cache/features_15min.parquet)
+Run: python -m dial_a_storm.features   (writes pipeline/data/cache/features_15min.parquet)
 """
 
 from __future__ import annotations

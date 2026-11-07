@@ -1,6 +1,6 @@
 # Dial-a-Storm Data Contracts (schema_version 1)
 
-The Python pipeline (`data/src`) writes static JSON to `web/public/data/`. The web app fetches the
+The Python pipeline (`pipeline/dial_a_storm`) writes static JSON to `web/public/data/`. The web app fetches the
 files from `/data/...` and validates every one with the Zod schemas in `web/lib/types.ts`. This file
 is the reference both sides implement. A schema change must update the Python writer,
 `web/lib/types.ts` and this document in the same commit; breaking changes bump `schema_version`.
@@ -22,11 +22,11 @@ web/public/data/
 | Cadence | `cadence_minutes = 15` (model grid). Raw OMNI is 5 min. |
 | Missing values | `null` in nullable series. Never `NaN` (writers use `allow_nan=False`). |
 | Units | B in nT, v in km/s, n in cm^-3, Pdyn in nPa, coupling / Ey in mV/m, SYM-H in nT. |
-| `source` | `"PIPELINE"` for ML output; `"FIXTURE"` for the stand-in files made by `src.make_fixtures`. The UI shows a FIXTURE badge. |
+| `source` | `"PIPELINE"` for ML output; `"FIXTURE"` for the stand-in files made by `dial_a_storm.make_fixtures`. The UI shows a FIXTURE badge. |
 | `model_kind` | `"hybrid_ridge_xgb"` (Ridge backbone + XGBoost residual) or `"burton_fixture"` (Burton/O'Brien-McPherron physics model, fixtures only). |
 | Storm id | `storm_YYYYMMDD` from the UTC date the storm interval starts; `_2`, `_3`… on collision. |
 
-### Physics (implemented once in `data/src/physics.py`, mirrored in `web/lib/live.ts`)
+### Physics (implemented once in `pipeline/dial_a_storm/physics.py`, mirrored in `web/lib/live.ts`)
 
 - `Bs = max(-Bz, 0)`
 - `Pdyn = 1.6726e-6 * n * v^2` (nPa)
@@ -52,7 +52,7 @@ SYM-H expands the oval.
 
 ## 1. `manifest.json`
 
-Written by `src.model` (PIPELINE) or `src.make_fixtures` (FIXTURE).
+Written by `dial_a_storm.model` (PIPELINE) or `dial_a_storm.make_fixtures` (FIXTURE).
 
 | Field | Type | Notes |
 |---|---|---|
@@ -99,7 +99,7 @@ Written by `src.model` (PIPELINE) or `src.make_fixtures` (FIXTURE).
 
 ## 2. `storms.json`
 
-Written by `src.storms`.
+Written by `dial_a_storm.storms`.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -129,7 +129,7 @@ Written by `src.storms`.
 
 ## 3. `storm_windows/{id}.json`
 
-Written by `src.export_grid.build_documents`. All arrays have length `n_times`.
+Written by `dial_a_storm.export_grid.build_documents`. All arrays have length `n_times`.
 
 | Field | Type | Notes |
 |---|---|---|
@@ -149,7 +149,7 @@ Written by `src.export_grid.build_documents`. All arrays have length `n_times`.
 
 ## 4. `scenario_grid/{id}.json`
 
-Written by `src.export_grid.build_documents`.
+Written by `dial_a_storm.export_grid.build_documents`.
 
 | Field | Type | Notes |
 |---|---|---|

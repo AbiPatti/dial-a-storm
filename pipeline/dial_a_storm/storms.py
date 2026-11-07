@@ -9,7 +9,7 @@ the 15-minute model grid.
 Storm detection uses SYM-H because it defines *which events to replay*. SYM-H never becomes a model
 feature.
 
-Run: python -m src.storms
+Run: python -m dial_a_storm.storms
 """
 
 from __future__ import annotations

@@ -1,4 +1,4 @@
-# Dial-a-Storm: Engineering & Stack Rules
+# Engineering Guide
 
 Dial-a-Storm lets users replay the top 8 geomagnetic storms of 2010–2026, rescale the solar-wind
 drivers (southward Bz, speed, density), and watch an ML surrogate of SYM-H respond, next to a
@@ -6,8 +6,8 @@ WebGL 2 scene of the Sun, solar wind, magnetosphere and aurora.
 
 ## Architecture (two halves, one contract)
 
-- `data/` is an offline Python 3.11+ pipeline. It trains the model, precomputes scenario grids and
-  writes static JSON to `web/public/data/`. Nothing in `data/` runs at request time.
+- `pipeline/` is an offline Python 3.11+ pipeline. It trains the model, precomputes scenario grids and
+  writes static JSON to `web/public/data/`. Nothing in `pipeline/` runs at request time.
 - `web/` is a Next.js 14 App Router client. It never runs Python or ML inference. It loads the
   static JSON, validates it with Zod, and trilinearly interpolates the scenario grid in the browser.
 - `docs/CONTRACTS.md` is the single source of truth for every exported JSON file. Any schema change
@@ -29,13 +29,13 @@ WebGL 2 scene of the Sun, solar wind, magnetosphere and aurora.
    early stopping or hyper-parameter selection.
 5. **Hybrid model:** Ridge backbone on integrated coupling sums (extrapolates linearly) + XGBoost on
    the Ridge residuals. Never ship pure XGBoost as the predictor; it saturates at the training max.
-6. **Physics conventions** (all in `data/src/physics.py`, nowhere else):
+6. **Physics conventions** (all in `pipeline/dial_a_storm/physics.py`, nowhere else):
    - `Bs = max(-Bz, 0)`; scenario Bz multiplier applies only where Bz < 0.
    - `Bt_new = sqrt(max(0, Bt^2 - Bz^2 + Bz_new^2))`.
    - `Pdyn = 1.6726e-6 * n * v^2` nPa; `Ey = c = v * Bs * 1e-3` mV/m.
 7. Scenario points whose peak coupling exceeds the 2010–2019 maximum are flagged `in_range: false`.
    The UI must show this, never hide it.
-8. Run `pytest` in `data/` before exporting. Tests must pass.
+8. Run `pytest` in `pipeline/` before exporting. Tests must pass.
 
 ## Web rules
 
@@ -55,11 +55,12 @@ WebGL 2 scene of the Sun, solar wind, magnetosphere and aurora.
 ## Commands
 
 ```bash
-# Python pipeline (from data/)
-python3.11 -m venv .venv && .venv/bin/pip install -r requirements.txt
-.venv/bin/pytest
-.venv/bin/python -m src.pipeline                 # writes web/public/data/
-.venv/bin/python -m src.make_fixtures            # regenerates the FIXTURE artifacts
+# Python pipeline (from pipeline/). Raw CSV goes in pipeline/data/raw/ (or set OMNI_CSV).
+python -m venv .venv
+.venv/Scripts/pip install -r requirements.txt     # macOS/Linux: .venv/bin/...
+.venv/Scripts/pytest
+.venv/Scripts/python -m dial_a_storm              # full pipeline, writes web/public/data/
+.venv/Scripts/python -m dial_a_storm.make_fixtures
 
 # Web (from web/)
 npm install

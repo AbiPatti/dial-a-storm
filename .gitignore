@@ -1,9 +1,9 @@
 # Raw NASA OMNI extract (138 MB, above GitHub's 100 MB limit). Keep it local.
+pipeline/data/
 *.csv
 
 # Python pipeline: caches, models, virtualenv
-data/cache/
-data/.venv/
+pipeline/.venv/
 __pycache__/
 *.pyc
 .pytest_cache/

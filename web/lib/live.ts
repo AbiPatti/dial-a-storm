@@ -1,6 +1,6 @@
 /**
  * Instantaneous "what-if" state at the playback cursor: the interpolated SYM-H plus the scaled
- * solar-wind drivers, using the same physics conventions as data/src/physics.py.
+ * solar-wind drivers, using the same physics conventions as pipeline/dial_a_storm/physics.py.
  */
 import { sampleNullable, sampleTrace } from "./interpolate";
 import { auroraLatitude, magnetopauseStandoffRe, severity01, tierFor, type Tier } from "./severity";
