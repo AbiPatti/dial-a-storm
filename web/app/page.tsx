@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect } from "react";
 import Dial from "@/components/hud/Dial";
 import Headline from "@/components/hud/Headline";
+import Impacts from "@/components/hud/Impacts";
 import StormBar from "@/components/hud/StormBar";
 import HoldoutSection from "@/components/ui/HoldoutSection";
 import { formatDate } from "@/lib/live";
@@ -93,6 +94,12 @@ export default function Page() {
           <div className="mt-8">
             <StormBar />
           </div>
+
+          {status === "ready" && (
+            <div className="mt-8 md:absolute md:right-8 md:top-8 md:mt-0">
+              <Impacts />
+            </div>
+          )}
 
           {status === "error" && (
             <div role="alert" className="glass pointer-events-auto absolute left-1/2 top-1/2 w-[min(92vw,520px)] -translate-x-1/2 -translate-y-1/2 p-5 text-sm">

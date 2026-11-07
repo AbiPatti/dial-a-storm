@@ -2,6 +2,7 @@
 
 import { formatUtc, liveFrame, type LiveFrame } from "@/lib/live";
 import { useDialStore } from "@/lib/store";
+import HistoryRuler from "./HistoryRuler";
 
 /**
  * The one piece of text that explains the scene. It rewrites itself from the live state, so during
@@ -40,6 +41,7 @@ export default function Headline() {
   const cursor = useDialStore((s) => s.cursor);
   const storms = useDialStore((s) => s.storms);
   const activeId = useDialStore((s) => s.activeStormId);
+  const tracePeak = useDialStore((s) => s.tracePeak);
 
   const f = liveFrame(bundle, trace, params, cursor);
   const { lead, accent, sub } = story(f);
@@ -69,6 +71,8 @@ export default function Headline() {
           </div>
         </div>
       </div>
+
+      {f.ready && <HistoryRuler live={f.symH} peak={tracePeak?.value ?? null} color={f.tier.color} observedPeak={bundle?.observedMin ?? null} />}
     </section>
   );
 }

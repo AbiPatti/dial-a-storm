@@ -151,3 +151,32 @@ test.describe("controls", () => {
     expect(errors).toEqual([]);
   });
 });
+
+test.describe("consequences", () => {
+  test("impacts and the history ruler escalate with the dial", async ({ page }) => {
+    const errors = trackErrors(page);
+    await openReady(page);
+
+    const panel = page.getByRole("region", { name: "Consequences" });
+    await expect(panel).toBeVisible();
+    for (const id of ["aurora", "grid", "satellites", "gps", "radio"]) {
+      await expect(panel.getByTestId(`impact-${id}`)).toBeVisible();
+    }
+    await expect(page.getByTestId("history-ruler")).toBeVisible();
+
+    const grid = panel.getByTestId("impact-grid");
+    await dial(page).focus();
+    await page.keyboard.press("Home");
+    const gentle = Number(await grid.getAttribute("data-peak-level"));
+    await expect(page.getByTestId("history-verdict")).toContainText("short of a Carrington");
+
+    await page.keyboard.press("End");
+    await expect.poll(async () => Number(await grid.getAttribute("data-peak-level"))).toBeGreaterThan(gentle);
+    await expect(page.getByTestId("history-verdict")).toContainText("Carrington-class");
+
+    // The live rows follow the cursor: scrubbing to the start of the window leaves the grid quiet.
+    await scrub(page).fill("0");
+    await expect(grid).toHaveAttribute("data-level", "0");
+    expect(errors).toEqual([]);
+  });
+});

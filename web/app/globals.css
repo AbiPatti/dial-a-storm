@@ -90,7 +90,8 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .animate-pulseAmber {
+  .animate-pulseAmber,
+  .animate-impactIn {
     animation: none;
   }
 }
