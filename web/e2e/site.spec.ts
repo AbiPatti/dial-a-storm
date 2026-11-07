@@ -10,18 +10,19 @@ function trackErrors(page: Page): string[] {
   return errors;
 }
 
-const controls = (page: Page) => page.getByRole("complementary", { name: "Storm controls" });
-const stormButtons = (page: Page) => controls(page).locator("button[aria-pressed]");
-const timeReadout = (page: Page) => page.getByRole("slider", { name: "Scrub playback time" });
-const statValue = (page: Page, label: string) => page.getByText(label, { exact: true }).locator("xpath=following-sibling::div[1]");
+const timeline = (page: Page) => page.getByRole("region", { name: "Timeline" });
+const stormDots = (page: Page) => timeline(page).locator("button[aria-pressed]");
+const heroValue = (page: Page) => page.getByTestId("hero-value");
+const dial = (page: Page) => page.getByRole("slider", { name: "Storm intensity" });
+const scrub = (page: Page) => page.getByRole("slider", { name: "Scrub playback time" });
 
 /** Load the page and wait until the default storm (the hold-out) is fully loaded. */
 async function openReady(page: Page) {
   await page.goto("/");
-  await expect(stormButtons(page)).toHaveCount(8);
-  await expect(stormButtons(page).filter({ hasText: "HOLD-OUT" })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.getByRole("button", { name: "▶ Simulate" })).toBeEnabled();
-  await expect(statValue(page, "Peak what-if")).not.toHaveText(/^—/);
+  await expect(stormDots(page)).toHaveCount(8);
+  await expect(timeline(page).getByRole("button", { name: /hold-out/ })).toHaveAttribute("aria-pressed", "true");
+  await expect(timeline(page).getByRole("button", { name: "Play" })).toBeEnabled();
+  await expect(heroValue(page)).not.toHaveText(/^—/);
 }
 
 test.describe("static data", () => {
@@ -41,7 +42,7 @@ test.describe("static data", () => {
 });
 
 test.describe("page", () => {
-  test("loads without errors and renders the main sections", async ({ page }) => {
+  test("loads without errors and renders the main pieces", async ({ page }) => {
     const errors = trackErrors(page);
     await openReady(page);
 
@@ -49,7 +50,9 @@ test.describe("page", () => {
     await expect(page.getByText(/^(FIXTURE DATA|PIPELINE)$/)).toBeVisible();
     await expect(page.locator("canvas").first()).toBeVisible();
     await expect(page.getByText("Could not load storm data")).toHaveCount(0);
-    await expect(page.getByRole("img").filter({ has: page.locator("path") }).first()).toBeVisible();
+    await expect(page.getByRole("region", { name: "What is happening" }).getByRole("heading")).not.toBeEmpty();
+    await expect(dial(page)).toBeVisible();
+    await expect(page.getByRole("img", { name: /Storm strength over time/ })).toBeVisible();
     await expect(page.getByText("How it works")).toBeAttached();
     await expect(page.locator("#honest-test")).toBeAttached();
 
@@ -60,42 +63,67 @@ test.describe("page", () => {
     const errors = trackErrors(page);
     await openReady(page);
 
-    const count = await stormButtons(page).count();
+    const count = await stormDots(page).count();
     for (let i = 0; i < count; i++) {
-      const button = stormButtons(page).nth(i);
-      await button.click();
-      await expect(button).toHaveAttribute("aria-pressed", "true");
-      await expect(controls(page).getByText("Could not load this storm.")).toHaveCount(0);
-      await expect(statValue(page, "Peak what-if")).not.toHaveText(/^—/);
+      const dot = stormDots(page).nth(i);
+      await dot.click();
+      await expect(dot).toHaveAttribute("aria-pressed", "true");
+      await expect(page.getByText("Could not load this storm.")).toHaveCount(0);
+      await expect(heroValue(page)).not.toHaveText(/^—/);
     }
+
+    // The arrows step through the same list.
+    await stormDots(page).first().click();
+    await timeline(page).getByRole("button", { name: "Next storm" }).click();
+    await expect(stormDots(page).nth(1)).toHaveAttribute("aria-pressed", "true");
+    await timeline(page).getByRole("button", { name: "Previous storm" }).click();
+    await expect(stormDots(page).first()).toHaveAttribute("aria-pressed", "true");
     expect(errors).toEqual([]);
   });
 });
 
 test.describe("controls", () => {
-  test("solar-wind sliders change the prediction and Reset restores it", async ({ page }) => {
+  test("the dial changes the prediction and Reset restores it", async ({ page }) => {
     const errors = trackErrors(page);
     await openReady(page);
 
-    const reset = controls(page).getByRole("button", { name: "Reset" });
-    const peak = statValue(page, "Peak what-if");
+    // Move into the storm so the prediction is clearly non-zero.
+    const max = Number(await scrub(page).getAttribute("max"));
+    await scrub(page).fill(String(Math.round(max * 0.3)));
+    const reset = page.getByRole("button", { name: "Reset" });
     await expect(reset).toBeDisabled();
-    const baseline = await peak.innerText();
+    const baseline = await heroValue(page).innerText();
 
-    await controls(page).getByLabel("Southward Bz").fill("3");
-    await controls(page).getByLabel("Wind speed").fill("1.5");
+    await dial(page).focus();
+    await page.keyboard.press("End");
+    await expect(dial(page)).toHaveAttribute("aria-valuenow", "3");
+    await expect(heroValue(page)).not.toHaveText(baseline);
+    await expect(page.getByRole("alert").filter({ hasText: "BEYOND TRAINING DATA" })).toBeVisible();
     await expect(reset).toBeEnabled();
-    await expect(peak).not.toHaveText(baseline);
-    await expect(page.getByText("BEYOND TRAINING DATA")).toBeVisible();
 
-    await controls(page).getByLabel("Southward Bz").fill("0.5");
-    await controls(page).getByLabel("Wind speed").fill("0.8");
-    await controls(page).getByLabel("Proton density").fill("0.5");
-    await expect(peak).not.toHaveText(baseline);
+    await page.keyboard.press("Home");
+    await expect(dial(page)).toHaveAttribute("aria-valuenow", "0.5");
+    await expect(heroValue(page)).not.toHaveText(baseline);
 
     await reset.click();
     await expect(reset).toBeDisabled();
-    await expect(peak).toHaveText(baseline);
+    await expect(dial(page)).toHaveAttribute("aria-valuenow", "1");
+    await expect(heroValue(page)).toHaveText(baseline);
+    expect(errors).toEqual([]);
+  });
+
+  test("fine-tune exposes the three driver sliders", async ({ page }) => {
+    const errors = trackErrors(page);
+    await openReady(page);
+
+    await page.getByRole("button", { name: "fine-tune" }).click();
+    for (const label of ["Southward Bz", "Wind speed", "Proton density"]) {
+      await expect(page.getByLabel(label)).toBeVisible();
+    }
+    await page.getByLabel("Southward Bz").fill("2");
+    await expect(dial(page)).toHaveAttribute("aria-valuenow", "2");
+    await page.getByLabel("Proton density").fill("3");
+    await expect(page.getByRole("button", { name: "Reset" })).toBeEnabled();
     expect(errors).toEqual([]);
   });
 
@@ -103,30 +131,24 @@ test.describe("controls", () => {
     const errors = trackErrors(page);
     await openReady(page);
 
-    const scrub = timeReadout(page);
-    await controls(page).getByRole("button", { name: "Restart" }).click();
-    await expect(scrub).toHaveValue("0");
+    const t = timeline(page);
+    await t.getByRole("button", { name: "Restart" }).click();
+    await expect(scrub(page)).toHaveValue("0");
 
-    await controls(page).getByRole("button", { name: "Play" }).click();
-    await expect(controls(page).getByRole("button", { name: "Pause" })).toBeVisible();
-    await expect.poll(async () => Number(await scrub.inputValue())).toBeGreaterThan(0);
-    await controls(page).getByRole("button", { name: "Pause" }).click();
-    const paused = await scrub.inputValue();
+    await t.getByRole("button", { name: "Play" }).click();
+    await expect(t.getByRole("button", { name: "Pause" })).toBeVisible();
+    await expect.poll(async () => Number(await scrub(page).inputValue())).toBeGreaterThan(0);
+    await t.getByRole("button", { name: "Pause" }).click();
+    const paused = await scrub(page).inputValue();
     await page.waitForTimeout(500);
-    await expect(scrub).toHaveValue(paused);
+    await expect(scrub(page)).toHaveValue(paused);
 
-    await scrub.fill("100");
-    await expect(scrub).toHaveValue("100");
-    await expect(statValue(page, "What-if SYM-H")).not.toHaveText(/^—/);
+    await scrub(page).fill("100");
+    await expect(scrub(page)).toHaveValue("100");
+    await expect(heroValue(page)).not.toHaveText(/^—/);
 
-    await controls(page).getByRole("button", { name: "Restart" }).click();
-    await expect(scrub).toHaveValue("0");
-
-    await controls(page).getByRole("combobox").selectOption("48");
-    await expect(controls(page).getByRole("combobox")).toHaveValue("48");
-
-    await page.getByRole("button", { name: "▶ Simulate" }).click();
-    await expect(controls(page).getByRole("button", { name: "Pause" })).toBeVisible();
+    await t.getByRole("button", { name: "Restart" }).click();
+    await expect(scrub(page)).toHaveValue("0");
     expect(errors).toEqual([]);
   });
 });

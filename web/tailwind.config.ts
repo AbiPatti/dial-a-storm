@@ -6,6 +6,10 @@ const config: Config = {
     extend: {
       colors: {
         void: "#03050c",
+        ink: "#08060a",
+        ember: { 300: "#ffb38a", 400: "#ff8a4c", 500: "#ff6b2c" },
+        mint: { 300: "#b8ffe1", 400: "#7dffc8" },
+        crimson: { 400: "#ff4d63", 500: "#fb3b5b" },
         plasma: { 300: "#7dd3fc", 400: "#38bdf8", 500: "#0ea5e9" },
         aurora: { 300: "#86efac", 400: "#4ade80", 500: "#22c55e" },
         flare: { 300: "#fdba74", 400: "#fb923c", 500: "#f97316" },
@@ -14,6 +18,7 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
+        serif: ["var(--font-serif)", "ui-serif", "Georgia", "serif"],
       },
       keyframes: {
         pulseAmber: {

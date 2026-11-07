@@ -15,10 +15,10 @@ export interface Tier {
 }
 
 export const TIERS: Tier[] = [
-  { id: "G0", display: "G0", label: "Quiet", level: 0, color: "#7dd3fc", rgb: [0.35, 0.65, 1.0] },
-  { id: "G1-G2", display: "G1–G2", label: "Moderate", level: 1, color: "#4ade80", rgb: [0.3, 1.0, 0.65] },
-  { id: "G3-G4", display: "G3–G4", label: "Strong / Severe", level: 2, color: "#e879f9", rgb: [0.95, 0.4, 1.0] },
-  { id: "G5", display: "G5", label: "Extreme Superstorm", level: 3, color: "#f43f5e", rgb: [1.0, 0.22, 0.32] },
+  { id: "G0", display: "G0", label: "Quiet", level: 0, color: "#a7f3d0", rgb: [0.45, 0.95, 0.75] },
+  { id: "G1-G2", display: "G1–G2", label: "Moderate", level: 1, color: "#fcd34d", rgb: [1.0, 0.8, 0.3] },
+  { id: "G3-G4", display: "G3–G4", label: "Strong / Severe", level: 2, color: "#fb923c", rgb: [1.0, 0.5, 0.2] },
+  { id: "G5", display: "G5", label: "Extreme Superstorm", level: 3, color: "#fb3b5b", rgb: [1.0, 0.2, 0.32] },
 ];
 
 /** Boundaries (nT): > -50 quiet, (-100, -50] moderate, (-250, -100] strong/severe, <= -250 extreme. */

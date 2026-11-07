@@ -49,6 +49,8 @@ export interface DialState {
   init: () => Promise<void>;
   selectStorm: (id: string) => Promise<void>;
   setParam: (key: keyof Params, value: number) => void;
+  /** One-knob control: scales southward Bz, speed and density together (see intensityParams). */
+  setIntensity: (k: number) => void;
   resetParams: () => void;
   simulate: () => void;
   play: () => void;
@@ -60,6 +62,14 @@ export interface DialState {
 }
 
 const msOf = (iso: string) => Date.parse(iso);
+
+/**
+ * The dial's single "intensity" k (x0.5 .. x3) mapped onto the three drivers. Southward Bz carries
+ * the full factor because it is what opens the shield; speed and density follow more gently.
+ */
+export function intensityParams(k: number): Params {
+  return { bz: k, speed: 1 + (k - 1) * 0.25, density: 1 + (k - 1) * 0.5 };
+}
 
 function buildBundle(window: StormWindow, grid: PreparedGrid): StormBundle {
   const t0Ms = msOf(window.t0);
@@ -158,6 +168,16 @@ export const useDialStore = create<DialState>()((set, get) => ({
       return;
     }
     set({ params: next, ...computeScenario(bundle.grid, next) });
+  },
+
+  setIntensity: (k) => {
+    const { bundle } = get();
+    const raw = intensityParams(k);
+    const axes = bundle?.grid.axes;
+    const next: Params = axes
+      ? { bz: clampToAxis(axes.bz, raw.bz), speed: clampToAxis(axes.speed, raw.speed), density: clampToAxis(axes.density, raw.density) }
+      : raw;
+    set(bundle ? { params: next, ...computeScenario(bundle.grid, next) } : { params: next });
   },
 
   resetParams: () => {

@@ -75,10 +75,10 @@ void main() {
   float r2 = dot(c, c);
   if (r2 > 0.25 || vAlpha <= 0.0) discard;
   float soft = exp(-r2 * 14.0);
-  vec3 slow = vec3(1.0, 0.62, 0.25);
-  vec3 fast = vec3(0.65, 0.86, 1.0);
+  vec3 slow = vec3(1.0, 0.55, 0.18);
+  vec3 fast = vec3(1.0, 0.85, 0.55);
   vec3 col = mix(slow, fast, vSpeed);
-  col += vec3(1.0, 0.5, 0.9) * vCompress * 0.8;
+  col += vec3(1.0, 0.35, 0.4) * vCompress * 0.7;
   gl_FragColor = vec4(col * soft * vAlpha * uBrightness * (0.55 + 1.2 * vCompress), 1.0);
 }
 `;
@@ -124,7 +124,7 @@ export default function SolarWindParticles({ count = 20_000 }: SolarWindParticle
           uEndX: { value: SCENE.windEndX },
           uStandoff: { value: standoffToScene(10) },
           uDensityFrac: { value: 0.35 },
-          uSize: { value: 1.1 },
+          uSize: { value: 1.15 },
           uPixelRatio: { value: 1 },
           uSpeedNorm: { value: 0.2 },
           uBrightness: { value: 1 },
@@ -159,8 +159,8 @@ export default function SolarWindParticles({ count = 20_000 }: SolarWindParticle
     const u = material.uniforms;
     u.uPhase.value = phase.current;
     u.uSpeedNorm.value = THREE.MathUtils.clamp((sm.speed - 300) / 700, 0, 1);
-    u.uDensityFrac.value = THREE.MathUtils.clamp(0.12 + sm.density / 25, 0.12, 1);
-    u.uBrightness.value = 0.7 + 0.5 * Math.min(1, sm.density / 30);
+    u.uDensityFrac.value = THREE.MathUtils.clamp(0.2 + sm.density / 22, 0.2, 1);
+    u.uBrightness.value = 1.0 + 0.6 * Math.min(1, sm.density / 30);
     u.uStandoff.value = sm.standoff;
     u.uPixelRatio.value = dpr;
   });

@@ -3,72 +3,65 @@
 import { useFrame } from "@react-three/fiber";
 import { useEffect, useMemo, useRef, type ReactNode } from "react";
 import * as THREE from "three";
-import { NOISE_GLSL, SCENE } from "@/lib/glsl";
+import { SCENE } from "@/lib/glsl";
 import { liveFrame } from "@/lib/live";
 import { severityRgb } from "@/lib/severity";
 import { useDialStore } from "@/lib/store";
 
+/**
+ * Textured Earth: day map, city lights on the night side, clouds and ocean glint from
+ * /textures/earth/*.jpg, plus a thin atmosphere rim. The rim tint follows storm severity so Earth
+ * itself warms up as the storm deepens.
+ */
+
 const SUN_DIR = new THREE.Vector3(...SCENE.sunPosition).normalize();
 
-const worldVertex = /* glsl */ `
-varying vec3 vObj;
-varying vec3 vWorldNormal;
-varying vec3 vWorldPos;
+const vertex = /* glsl */ `
+varying vec2 vUv;
+varying vec3 vNormalW;
+varying vec3 vPosW;
 void main() {
-  vObj = position;
-  vWorldNormal = normalize(mat3(modelMatrix) * normal);
+  vUv = uv;
+  vNormalW = normalize(mat3(modelMatrix) * normal);
   vec4 wp = modelMatrix * vec4(position, 1.0);
-  vWorldPos = wp.xyz;
+  vPosW = wp.xyz;
   gl_Position = projectionMatrix * viewMatrix * wp;
 }
 `;
 
 const surfaceFragment = /* glsl */ `
+uniform sampler2D uDay;
+uniform sampler2D uNight;
+uniform sampler2D uSpecClouds;
 uniform vec3 uSunDir;
 uniform vec3 uAtmo;
 uniform float uSeverity;
-uniform float uTime;
-varying vec3 vObj;
-varying vec3 vWorldNormal;
-varying vec3 vWorldPos;
-${NOISE_GLSL}
+varying vec2 vUv;
+varying vec3 vNormalW;
+varying vec3 vPosW;
 void main() {
-  vec3 p = normalize(vObj);
-  float continent = fbm(p * 1.9 + vec3(4.1, 0.3, 2.2));
-  float land = smoothstep(0.03, 0.08, continent);
-  float lat = abs(p.y);
-  float ice = smoothstep(0.82, 0.9, lat + 0.04 * snoise(p * 6.0));
-
-  vec3 ocean = mix(vec3(0.008, 0.035, 0.13), vec3(0.03, 0.15, 0.33), smoothstep(-0.35, 0.03, continent));
-  float relief = fbm3(p * 7.0);
-  float arid = smoothstep(0.0, 0.45, snoise(p * 2.4 + 7.0)) * (1.0 - smoothstep(0.35, 0.7, lat));
-  vec3 landCol = mix(vec3(0.09, 0.25, 0.09), vec3(0.47, 0.38, 0.22), arid) * (0.78 + 0.45 * relief);
-  vec3 surf = mix(ocean, landCol, land);
-  surf = mix(surf, vec3(0.86, 0.9, 0.96), ice);
-
-  float cl = fbm(p * 3.1 + vec3(uTime * 0.012, 0.0, uTime * 0.007));
-  float clouds = smoothstep(0.1, 0.48, cl);
-
-  vec3 N = normalize(vWorldNormal);
+  vec3 N = normalize(vNormalW);
+  vec3 V = normalize(cameraPosition - vPosW);
   vec3 L = normalize(uSunDir);
-  vec3 V = normalize(cameraPosition - vWorldPos);
-  float ndl = dot(N, L);
-  float day = smoothstep(-0.1, 0.2, ndl);
+  float sunOri = dot(N, L);
+  float dayMix = smoothstep(-0.2, 0.45, sunOri);
 
-  vec3 albedo = mix(surf, vec3(0.95), clouds * 0.85);
-  vec3 col = albedo * (0.025 + 1.15 * max(ndl, 0.0));
+  vec3 day = texture2D(uDay, vUv).rgb;
+  vec3 night = texture2D(uNight, vUv).rgb * vec3(1.0, 0.78, 0.52) * 1.6;
+  vec3 col = mix(night, day * (0.15 + 1.05 * max(sunOri, 0.0)), dayMix);
 
+  vec2 sc = texture2D(uSpecClouds, vUv).rg;
+  float clouds = smoothstep(0.45, 1.0, sc.g);
+  col = mix(col, vec3(1.0) * (0.06 + 0.95 * max(sunOri, 0.0)), clouds * 0.9);
+
+  // Ocean glint.
   vec3 H = normalize(L + V);
-  col += vec3(1.0, 0.95, 0.85) * pow(max(dot(N, H), 0.0), 70.0) * (1.0 - land) * (1.0 - clouds) * day * 0.7;
+  col += vec3(1.0, 0.86, 0.7) * pow(max(dot(N, H), 0.0), 60.0) * sc.r * dayMix * 0.8;
 
-  float cities = smoothstep(0.62, 0.9, snoise(p * 42.0) * 0.5 + 0.5) * land * (1.0 - ice) * (1.0 - clouds * 0.8);
-  col += vec3(1.0, 0.7, 0.32) * cities * (1.0 - day) * 0.85;
-
-  // Inner Fresnel rim: the atmosphere seen edge-on, coloured by storm severity.
-  float fres = pow(1.0 - max(dot(N, V), 0.0), 3.0);
-  float lit = mix(0.35 + 0.65 * smoothstep(-0.3, 0.5, ndl), 1.0, uSeverity * 0.7);
-  col += uAtmo * fres * lit * (0.4 + 0.45 * uSeverity);
-
+  // Atmosphere seen edge-on, warmer as the storm grows.
+  float fres = pow(1.0 - max(dot(N, V), 0.0), 2.6);
+  float lit = mix(smoothstep(-0.4, 0.8, sunOri), 1.0, uSeverity * 0.6);
+  col = mix(col, uAtmo, fres * lit * (0.55 + 0.35 * uSeverity));
   gl_FragColor = vec4(col, 1.0);
 }
 `;
@@ -77,31 +70,28 @@ const atmosphereFragment = /* glsl */ `
 uniform vec3 uSunDir;
 uniform vec3 uAtmo;
 uniform float uSeverity;
-uniform float uTime;
-uniform float uEarthRadius;
-uniform float uShellRadius;
-varying vec3 vObj;
-varying vec3 vWorldNormal;
-varying vec3 vWorldPos;
+varying vec2 vUv;
+varying vec3 vNormalW;
+varying vec3 vPosW;
 void main() {
-  vec3 N = normalize(vWorldNormal);
-  vec3 V = normalize(cameraPosition - vWorldPos);
-  float d = clamp(dot(N, V), 0.0, 1.0);
-  // Impact parameter of the view ray relative to Earth's centre.
-  float b = sqrt(max(0.0, 1.0 - d * d)) * uShellRadius;
-  float h = (b - uEarthRadius) / (uShellRadius - uEarthRadius);
-  float glow = h > 0.0 ? pow(1.0 - clamp(h, 0.0, 1.0), 2.4) : pow(b / uEarthRadius, 7.0);
-
-  float sunSide = 0.3 + 0.7 * smoothstep(-0.45, 0.6, dot(N, normalize(uSunDir)));
-  sunSide = mix(sunSide, 1.0, uSeverity * 0.6);
-  float pulse = 1.0 + 0.18 * uSeverity * sin(uTime * 2.2);
-  vec3 col = uAtmo * glow * sunSide * (0.6 + 0.8 * uSeverity) * pulse;
-  gl_FragColor = vec4(col, 1.0);
+  vec3 N = normalize(vNormalW);
+  vec3 V = normalize(cameraPosition - vPosW);
+  float rim = pow(1.0 - abs(dot(N, V)), 3.0);
+  float edge = smoothstep(0.0, 0.35, abs(dot(N, V)));
+  float sunSide = mix(smoothstep(-0.5, 0.4, dot(N, normalize(uSunDir))), 1.0, uSeverity * 0.5);
+  gl_FragColor = vec4(uAtmo * rim * edge * sunSide * (0.9 + 0.8 * uSeverity), 1.0);
 }
 `;
 
+function loadTexture(loader: THREE.TextureLoader, url: string, srgb: boolean) {
+  const t = loader.load(url);
+  if (srgb) t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  return t;
+}
+
 interface EarthProps {
-  /** Children are mounted in Earth's tilted, non-spinning frame (e.g. the auroral ovals). */
+  /** Children are mounted in Earth's tilted, non-spinning frame (aurora, field lines, ring current). */
   children?: ReactNode;
 }
 
@@ -110,68 +100,71 @@ export default function Earth({ children }: EarthProps) {
   const severity = useRef(0);
   const atmo = useRef(new THREE.Color(...severityRgb(0)));
   const target = useMemo(() => new THREE.Color(), []);
-  const shellRadius = SCENE.earthRadius * 1.14;
+
+  const textures = useMemo(() => {
+    const loader = new THREE.TextureLoader();
+    return {
+      day: loadTexture(loader, "/textures/earth/day.jpg", true),
+      night: loadTexture(loader, "/textures/earth/night.jpg", true),
+      specClouds: loadTexture(loader, "/textures/earth/specular-clouds.jpg", false),
+    };
+  }, []);
 
   const uniforms = useMemo(
     () => ({
+      uDay: { value: textures.day },
+      uNight: { value: textures.night },
+      uSpecClouds: { value: textures.specClouds },
       uSunDir: { value: SUN_DIR.clone() },
       uAtmo: { value: new THREE.Color(...severityRgb(0)) },
       uSeverity: { value: 0 },
-      uTime: { value: 0 },
     }),
-    [],
+    [textures],
   );
 
-  const surface = useMemo(
-    () => new THREE.ShaderMaterial({ uniforms, vertexShader: worldVertex, fragmentShader: surfaceFragment }),
-    [uniforms],
-  );
-
+  const surface = useMemo(() => new THREE.ShaderMaterial({ uniforms, vertexShader: vertex, fragmentShader: surfaceFragment }), [uniforms]);
   const atmosphere = useMemo(
     () =>
       new THREE.ShaderMaterial({
-        uniforms: {
-          ...uniforms,
-          uEarthRadius: { value: SCENE.earthRadius },
-          uShellRadius: { value: shellRadius },
-        },
-        vertexShader: worldVertex,
+        uniforms,
+        vertexShader: vertex,
         fragmentShader: atmosphereFragment,
         transparent: true,
         depthWrite: false,
+        side: THREE.BackSide,
         blending: THREE.AdditiveBlending,
       }),
-    [uniforms, shellRadius],
+    [uniforms],
   );
 
   useEffect(
     () => () => {
       surface.dispose();
       atmosphere.dispose();
+      Object.values(textures).forEach((t) => t.dispose());
     },
-    [surface, atmosphere],
+    [surface, atmosphere, textures],
   );
 
-  useFrame((state, dt) => {
+  useFrame((_, dt) => {
     const s = useDialStore.getState();
     const frame = liveFrame(s.bundle, s.activeTrace, s.params, s.cursor);
-    severity.current = THREE.MathUtils.damp(severity.current, frame.severity, 4, dt);
+    severity.current = THREE.MathUtils.damp(severity.current, frame.severity, 3, dt);
     target.setRGB(...severityRgb(frame.symH));
-    atmo.current.lerp(target, 1 - Math.exp(-4 * dt));
+    atmo.current.lerp(target, 1 - Math.exp(-3 * dt));
     uniforms.uAtmo.value.copy(atmo.current);
     uniforms.uSeverity.value = severity.current;
-    uniforms.uTime.value = state.clock.elapsedTime;
-    if (spinRef.current) spinRef.current.rotation.y += dt * 0.04;
+    if (spinRef.current) spinRef.current.rotation.y += dt * 0.03;
   });
 
   return (
     <group rotation={[0, 0, SCENE.tilt]}>
-      <mesh ref={spinRef}>
+      <mesh ref={spinRef} rotation={[0, -1.2, 0]}>
         <sphereGeometry args={[SCENE.earthRadius, 128, 96]} />
         <primitive object={surface} attach="material" />
       </mesh>
       <mesh renderOrder={3}>
-        <sphereGeometry args={[shellRadius, 96, 64]} />
+        <sphereGeometry args={[SCENE.earthRadius * 1.12, 96, 64]} />
         <primitive object={atmosphere} attach="material" />
       </mesh>
       {children}

@@ -4,9 +4,11 @@ const PORT = 3100;
 
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 30_000,
+  // Headless runs render the 3D scene in software WebGL, which is CPU-heavy: allow time and limit workers.
+  timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,
+  workers: 3,
   retries: process.env.CI ? 1 : 0,
   reporter: [["list"]],
   use: {

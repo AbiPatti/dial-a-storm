@@ -104,7 +104,7 @@ void main() {
 export default function Sun() {
   const coronaRef = useRef<THREE.Mesh>(null);
   const activity = useRef(0.3);
-  const coronaScale = 3.4;
+  const coronaScale = 2.4;
 
   const surface = useMemo(
     () =>

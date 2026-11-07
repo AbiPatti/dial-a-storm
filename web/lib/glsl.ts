@@ -77,11 +77,11 @@ float fbm3(vec3 p) {
 
 /** Scene layout (scene units). Earth radius = 1 R_E. */
 export const SCENE = {
-  sunPosition: [-30, 0, 0] as [number, number, number],
-  sunRadius: 5,
+  sunPosition: [-20, 0, 0] as [number, number, number],
+  sunRadius: 9,
   earthRadius: 1.5,
   /** Particles spawn at the solar surface and leave the frame past Earth. */
-  windStartX: -25,
+  windStartX: -11.2,
   windEndX: 16,
   /** Earth obliquity used for the tilted Earth frame (rad). */
   tilt: (23.44 * Math.PI) / 180,

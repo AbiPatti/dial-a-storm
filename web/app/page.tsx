@@ -2,9 +2,9 @@
 
 import dynamic from "next/dynamic";
 import { useEffect } from "react";
-import ControlDeck from "@/components/deck/ControlDeck";
-import { LiveComparisonChart } from "@/components/deck/ComparisonChart";
-import MetricsBanner from "@/components/deck/MetricsBanner";
+import Dial from "@/components/hud/Dial";
+import Headline from "@/components/hud/Headline";
+import StormBar from "@/components/hud/StormBar";
 import HoldoutSection from "@/components/ui/HoldoutSection";
 import { formatDate } from "@/lib/live";
 import { useDialStore } from "@/lib/store";
@@ -18,10 +18,7 @@ function SourceBadge() {
   if (!manifest) return null;
   const fixture = manifest.source === "FIXTURE";
   return (
-    <span
-      className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-wider ${fixture ? "bg-alert-500 text-void" : "bg-aurora-500/20 text-aurora-300"}`}
-      title={manifest.model.description}
-    >
+    <span className={`micro ${fixture ? "!text-ember-300" : "!text-mint-300"}`} title={manifest.model.description}>
       {fixture ? "FIXTURE DATA" : "PIPELINE"}
     </span>
   );
@@ -80,33 +77,21 @@ export default function Page() {
     <>
       <SpaceCanvas />
       <main className="relative z-10">
-        <section className="pointer-events-none relative flex min-h-[100svh] flex-col gap-4 p-4 lg:p-6">
-          <header className="flex flex-col gap-3 xl:flex-row xl:items-start">
-            <div className="pointer-events-auto shrink-0">
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-semibold tracking-tight text-white">
-                  Dial<span className="text-plasma-400">-a-</span>Storm
-                </h1>
-                <SourceBadge />
-              </div>
-              <p className="mt-0.5 max-w-xs text-xs text-slate-400">
-                Rewind a real geomagnetic storm, turn up the solar wind, and watch Earth&apos;s magnetic field respond.
-              </p>
-            </div>
-            <div className="min-w-0 flex-1">
-              <MetricsBanner />
-            </div>
+        <section className="pointer-events-none relative flex min-h-[100svh] flex-col p-5 md:p-8">
+          <header className="pointer-events-auto flex items-baseline gap-3">
+            <h1 className="font-serif text-2xl tracking-tight text-stone-100">
+              Dial<span className="italic text-ember-400">-a-</span>Storm
+            </h1>
+            <SourceBadge />
           </header>
 
-          <div className="grid flex-1 gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
-            <div className="order-2 flex flex-col justify-end lg:order-1">
-              <div className="glass pointer-events-auto p-3">
-                <LiveComparisonChart height={210} />
-              </div>
-            </div>
-            <div className="order-1 flex flex-col justify-end lg:order-2">
-              <ControlDeck />
-            </div>
+          <div className="flex flex-1 flex-col justify-end gap-8 pt-[38svh] md:flex-row md:items-end md:justify-between md:pt-0">
+            <Headline />
+            <Dial />
+          </div>
+
+          <div className="mt-8">
+            <StormBar />
           </div>
 
           {status === "error" && (
