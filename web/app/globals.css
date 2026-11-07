@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", "SF Pro Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+
+html,
+body {
+  background: #03050c;
+  color: #e2e8f0;
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  /* Glassmorphism HUD panel. */
+  .glass {
+    @apply rounded-2xl border border-white/10 bg-slate-950/60 shadow-[0_8px_40px_rgba(0,0,0,0.45)] backdrop-blur-xl;
+    background-image: linear-gradient(160deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.01) 40%);
+  }
+
+  /* Range input with accent-coloured fill: set --accent and --fill (0–100%) inline. */
+  .dial-range {
+    -webkit-appearance: none;
+    appearance: none;
+    height: 18px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .dial-range:focus-visible {
+    outline: 2px solid var(--accent, #38bdf8);
+    outline-offset: 3px;
+    border-radius: 9999px;
+  }
+  .dial-range::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: linear-gradient(
+      to right,
+      var(--accent, #38bdf8) 0%,
+      var(--accent, #38bdf8) var(--fill, 50%),
+      rgba(148, 163, 184, 0.25) var(--fill, 50%)
+    );
+  }
+  .dial-range::-moz-range-track {
+    height: 4px;
+    border-radius: 9999px;
+    background: rgba(148, 163, 184, 0.25);
+  }
+  .dial-range::-moz-range-progress {
+    height: 4px;
+    border-radius: 9999px;
+    background: var(--accent, #38bdf8);
+  }
+  .dial-range::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    margin-top: -6px;
+    height: 16px;
+    width: 16px;
+    border-radius: 9999px;
+    background: #f8fafc;
+    border: 2px solid var(--accent, #38bdf8);
+    box-shadow: 0 0 12px var(--accent, #38bdf8);
+  }
+  .dial-range::-moz-range-thumb {
+    height: 14px;
+    width: 14px;
+    border-radius: 9999px;
+    background: #f8fafc;
+    border: 2px solid var(--accent, #38bdf8);
+    box-shadow: 0 0 12px var(--accent, #38bdf8);
+  }
+  .dial-range:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-pulseAmber {
+    animation: none;
+  }
+}

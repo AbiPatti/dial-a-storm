@@ -1,0 +1,183 @@
+{
+  "schema_version": 1,
+  "source": "FIXTURE",
+  "generated_at": "2026-11-07T20:01:48Z",
+  "model": {
+    "kind": "burton_fixture",
+    "description": "FIXTURE stand-in: Burton / O'Brien-McPherron (2000) physics model on real OMNI drivers. Run the Python pipeline to replace it with the Ridge + XGBoost hybrid.",
+    "cadence_minutes": 15,
+    "target": "sym_h",
+    "features": [
+      "coupling",
+      "sqrt_pdyn"
+    ],
+    "banned_inputs": [
+      "ae",
+      "al",
+      "pcn",
+      "proton_flux",
+      "sym_h"
+    ],
+    "ridge": null,
+    "xgb": null,
+    "train_seconds": 0.0
+  },
+  "splits": {
+    "train": {
+      "start_year": 2010,
+      "end_year": 2019,
+      "rows": 350592
+    },
+    "val": {
+      "start_year": 2020,
+      "end_year": 2022,
+      "rows": 105216
+    },
+    "test": {
+      "start_year": 2023,
+      "end_year": 2026,
+      "rows": 133152
+    }
+  },
+  "metrics": {
+    "train": {
+      "burton": {
+        "n": 350592,
+        "rmse": 13.403,
+        "mae": 10.646,
+        "r2": 0.266,
+        "bias": -9.571,
+        "storm_n": 7305,
+        "storm_rmse": 21.941
+      }
+    },
+    "val": {
+      "burton": {
+        "n": 105216,
+        "rmse": 13.682,
+        "mae": 11.234,
+        "r2": -0.0608,
+        "bias": -10.716,
+        "storm_n": 1295,
+        "storm_rmse": 21.344
+      }
+    },
+    "test": {
+      "burton": {
+        "n": 131424,
+        "rmse": 16.932,
+        "mae": 13.689,
+        "r2": 0.5388,
+        "bias": -10.942,
+        "storm_n": 8745,
+        "storm_rmse": 24.553
+      }
+    },
+    "test_excl_holdout": {
+      "burton": {
+        "n": 130845,
+        "rmse": 16.694,
+        "mae": 13.609,
+        "r2": 0.4872,
+        "bias": -11.109,
+        "storm_n": 8364,
+        "storm_rmse": 22.278
+      }
+    }
+  },
+  "holdout": {
+    "id": "storm_20240510",
+    "name": "Gannon Superstorm",
+    "window_start": "2024-05-09T18:15:00Z",
+    "window_end": "2024-05-15T18:45:00Z",
+    "observed_peak_nT": -497.0,
+    "observed_peak_time": "2024-05-11T02:15:00Z",
+    "predicted_peak_nT": {
+      "burton": -279.8
+    },
+    "predicted_peak_time": {
+      "burton": "2024-05-11T04:00:00Z"
+    },
+    "metrics": {
+      "burton": {
+        "n": 579,
+        "rmse": 45.835,
+        "mae": 31.726,
+        "r2": 0.8087,
+        "bias": 26.906,
+        "storm_n": 381,
+        "storm_rmse": 54.236
+      }
+    }
+  },
+  "coupling": {
+    "train_max_mV_m": 25.8,
+    "train_p999_mV_m": 7.45,
+    "train_max_time": "2015-06-22T19:20:00Z"
+  },
+  "grid": {
+    "bz_south_mult": [
+      0.5,
+      0.75,
+      1.0,
+      1.25,
+      1.5,
+      2.0,
+      2.5,
+      3.0
+    ],
+    "speed_mult": [
+      0.8,
+      0.9,
+      1.0,
+      1.1,
+      1.25,
+      1.5
+    ],
+    "density_mult": [
+      0.5,
+      0.75,
+      1.0,
+      1.5,
+      2.0,
+      3.0
+    ]
+  },
+  "g_scale": [
+    {
+      "tier": "G0",
+      "label": "Quiet",
+      "upper_nT": null,
+      "lower_nT": -50.0
+    },
+    {
+      "tier": "G1-G2",
+      "label": "Moderate",
+      "upper_nT": -50.0,
+      "lower_nT": -100.0
+    },
+    {
+      "tier": "G3-G4",
+      "label": "Strong / Severe",
+      "upper_nT": -100.0,
+      "lower_nT": -250.0
+    },
+    {
+      "tier": "G5",
+      "label": "Extreme Superstorm",
+      "upper_nT": -250.0,
+      "lower_nT": null
+    }
+  ],
+  "files": {
+    "storms": "storms.json",
+    "storm_windows": "storm_windows/{id}.json",
+    "scenario_grid": "scenario_grid/{id}.json"
+  },
+  "data": {
+    "source_csv": "nasa_omni_solar_wind_storms_5min_2010-2026.csv",
+    "rows_5min": 1766880,
+    "imputation": "causal forward fill, limit 30 min",
+    "citation": "NASA/GSFC OMNI 5-min data via OMNIWeb/CDAWeb (King & Papitashvili 2005, JGR 110, A02104)."
+  }
+}
