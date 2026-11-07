@@ -56,15 +56,17 @@ WebGL 2 scene of the Sun, solar wind, magnetosphere and aurora.
 
 ```bash
 # Python pipeline (from pipeline/). Raw CSV goes in pipeline/data/raw/ (or set OMNI_CSV).
+# Virtualenv binaries: .venv/bin/ on macOS/Linux, .venv\Scripts\ on Windows.
 python -m venv .venv
-.venv/Scripts/pip install -r requirements.txt     # macOS/Linux: .venv/bin/...
-.venv/Scripts/pytest
-.venv/Scripts/python -m dial_a_storm              # full pipeline, writes web/public/data/
-.venv/Scripts/python -m dial_a_storm.make_fixtures
+.venv/bin/pip install -r requirements.txt
+.venv/bin/pytest
+.venv/bin/python -m dial_a_storm              # full pipeline, writes web/public/data/
+.venv/bin/python -m dial_a_storm.make_fixtures
 
 # Web (from web/)
 npm install
 npm run dev        # http://localhost:3000
 npm run typecheck
 npm run build
+npm run test:e2e   # Playwright browser tests (first run: npx playwright install chromium)
 ```

@@ -19,6 +19,9 @@ Python or model inference.
 
 ## Getting started
 
+For the full step-by-step guide (prerequisites, Windows and macOS commands, getting the data file,
+troubleshooting), see [SETUP.md](SETUP.md). The short version:
+
 ### Web app
 
 ```bash
@@ -27,7 +30,8 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-The repo ships with stand-in data (marked `FIXTURE` in the UI), so the app runs without the pipeline.
+The repo ships with stand-in data (marked `FIXTURE` in the UI), so the app runs without Python or
+the dataset.
 
 Browser tests (Playwright) build the site and check data loading, storm selection, the sliders and
 playback. Run `npx playwright install chromium` once, then:
@@ -45,9 +49,9 @@ large for GitHub and is gitignored.
 ```bash
 cd pipeline
 python -m venv .venv
-.venv/Scripts/pip install -r requirements.txt   # macOS/Linux: .venv/bin/pip
-.venv/Scripts/pytest                             # causality / leakage tests
-.venv/Scripts/python -m dial_a_storm             # runs tests, then rebuilds web/public/data/
+.venv/bin/pip install -r requirements.txt   # Windows: .venv\Scripts\pip
+.venv/bin/pytest                             # causality / leakage tests
+.venv/bin/python -m dial_a_storm             # runs tests, then rebuilds web/public/data/
 ```
 
 Other entry points: `python -m dial_a_storm.make_fixtures` regenerates the stand-in data, and each
