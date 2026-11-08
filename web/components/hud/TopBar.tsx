@@ -137,7 +137,9 @@ export default function TopBar() {
   const st = useDialStore.getState;
 
   return (
-    <header className="pointer-events-none flex flex-wrap items-start justify-between gap-2 p-3 sm:flex-nowrap sm:gap-3 sm:p-4">
+    // relative z-20: the storm catalogue drops down over the headline and the consequences card,
+    // which come later in the DOM and create their own stacking contexts (backdrop blur).
+    <header className="pointer-events-none relative z-20 flex flex-wrap items-start justify-between gap-2 p-3 sm:flex-nowrap sm:gap-3 sm:p-4">
       <div className="pointer-events-auto glass flex min-w-0 items-center gap-1 p-1 sm:pl-3.5">
         <div className="sr-only sm:not-sr-only sm:flex sm:shrink-0 sm:items-center sm:gap-2 sm:pr-2">
           <h1 className="font-serif text-[22px] leading-none tracking-tight text-stone-100">

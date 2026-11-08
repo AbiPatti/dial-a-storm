@@ -54,6 +54,9 @@ export default function StormDial() {
   const isDefault = params.bz === 1 && params.speed === 1 && params.density === 1;
   const custom = !onIntensityCurve(params);
   const trainMax = bundle?.grid.trainMaxCoupling ?? 0;
+  const baselinePeak = bundle?.grid.baselinePeakCoupling ?? 0;
+  // Only explain the 1× case when the dial is weak enough that the real storm is the reason.
+  const baselineBeyond = baselinePeak > trainMax && peakCoupling <= baselinePeak * 1.01;
 
   const fromPointer = useCallback((clientX: number, clientY: number) => {
     const svg = svgRef.current;
@@ -163,7 +166,9 @@ export default function StormDial() {
         <p role="alert" data-testid="dial-advisory" className="mt-2 text-center text-[10.5px] leading-snug text-alert-300">
           <span className="font-mono text-[9.5px] font-bold tracking-wider">BEYOND TRAINING DATA</span>
           <br />
-          coupling {peakCoupling.toFixed(1)} mV/m vs {trainMax.toFixed(1)} max (2010–2019)
+          {baselineBeyond
+            ? `the real storm (${baselinePeak.toFixed(1)} mV/m) already tops the 2010–2019 max of ${trainMax.toFixed(1)}`
+            : `coupling ${peakCoupling.toFixed(1)} mV/m vs ${trainMax.toFixed(1)} max (2010–2019)`}
         </p>
       )}
     </section>

@@ -150,9 +150,13 @@ export default function DialPanel() {
   const peakTier = tierFor(peak ?? 0);
   const observed = bundle?.observedMin ?? null;
   const trainMax = bundle?.grid.trainMaxCoupling ?? manifest?.coupling.train_max_mV_m ?? 0;
+  // Four of the 2023–2026 storms drove the magnetosphere harder than anything in 2010–2019, so
+  // they are flagged even with every dial at ×1. Say so, so the flag does not read as a bug.
+  const baselinePeak = bundle?.grid.baselinePeakCoupling ?? 0;
+  const baselineBeyond = baselinePeak > trainMax;
   const extrapolationNote =
     manifest?.model.kind === "burton_fixture"
-      ? "No 2010–2019 training sample was driven this hard; read this replay as a physics extrapolation."
+      ? "Read this replay as a physics extrapolation."
       : "The prediction is a linear extrapolation of the Ridge backbone, not an interpolation of anything the model has seen.";
   const maxOut = () => {
     setParam("bz", axes.bz[axes.bz.length - 1]);
@@ -265,7 +269,14 @@ export default function DialPanel() {
             </span>
           </div>
           <p className="dp-advisory-body">
-            Peak coupling {peakCoupling.toFixed(1)} mV/m exceeds the 2010–2019 maximum of {trainMax.toFixed(1)} mV/m.{" "}
+            {baselineBeyond ? (
+              <>
+                This storm, as it happened, already peaked at {baselinePeak.toFixed(1)} mV/m, above the strongest 2010–2019 training sample ({trainMax.toFixed(1)}{" "}
+                mV/m). Even ×1 is outside the training data.{" "}
+              </>
+            ) : (
+              <>Peak coupling {peakCoupling.toFixed(1)} mV/m exceeds the 2010–2019 maximum of {trainMax.toFixed(1)} mV/m. </>
+            )}
             <span className="hidden sm:inline">{extrapolationNote}</span>
           </p>
         </div>

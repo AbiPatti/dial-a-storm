@@ -94,6 +94,21 @@ test.describe("page", () => {
     await stormChip(page).click();
     const count = await catalogue(page).getByRole("button").count();
     expect(count).toBe(8);
+    // The catalogue must paint above the headline (which ignores the pointer, so clicks alone
+    // would not notice it on top). Make the headline hit-testable, then probe the first rows.
+    const onTop = await page.evaluate(() => {
+      const headline = document.querySelector<HTMLElement>('section[aria-label="What is happening"]');
+      if (headline) headline.style.pointerEvents = "auto";
+      const rows = [...document.querySelectorAll('[role="dialog"][aria-label="Storm catalogue"] li')].slice(0, 4);
+      const ok = rows.every((row) => {
+        const r = row.getBoundingClientRect();
+        const hit = document.elementFromPoint(r.left + 24, r.top + r.height / 2);
+        return !!hit?.closest('[aria-label="Storm catalogue"]');
+      });
+      if (headline) headline.style.pointerEvents = "";
+      return ok && rows.length === 4;
+    });
+    expect(onTop).toBe(true);
     await page.keyboard.press("Escape");
     for (let i = 0; i < count; i++) {
       await stormChip(page).click();
@@ -324,6 +339,29 @@ test.describe("landing", () => {
     await expect(stormChip(page)).toBeVisible();
     await expect(landing(page)).toHaveCount(0);
     expect(errors).toEqual([]);
+  });
+
+  test("after the dive, the wheel scrolls the Explainer and keys reach the app", async ({ page }) => {
+    await page.addInitScript((guide) => window.localStorage.setItem(guide, "1"), GUIDE_KEY);
+    await page.goto("/");
+    await page.mouse.move(720, 450);
+    for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 300);
+    await expect(landing(page)).toHaveCount(0, { timeout: 30_000 });
+
+    // The landing's window listeners used to stay attached and swallow every wheel event.
+    await page.getByRole("tab", { name: "Explainer" }).click();
+    const panel = page.locator("#explainer-panel");
+    await expect(panel).toBeVisible();
+    await page.mouse.move(720, 500);
+    await page.mouse.wheel(0, 800);
+    await expect.poll(() => panel.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+
+    // ...and kept preventDefault on arrow keys, so the knob could not be turned from the keyboard.
+    await page.getByRole("tab", { name: "Simulator" }).click();
+    await expect(knob(page)).toBeVisible();
+    await knob(page).focus();
+    await page.keyboard.press("ArrowUp");
+    await expect(knob(page)).toHaveAttribute("aria-valuenow", "1.05");
   });
 
   test("a small scroll springs back to the title", async ({ page }) => {
