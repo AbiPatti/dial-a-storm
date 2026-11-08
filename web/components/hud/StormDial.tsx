@@ -58,12 +58,19 @@ export default function StormDial() {
   // Only explain the 1× case when the dial is weak enough that the real storm is the reason.
   const baselineBeyond = baselinePeak > trainMax && peakCoupling <= baselinePeak * 1.01;
 
+  // Centre of the knob, captured when a drag starts. Reading it live would feed back: the advisory
+  // below can change the card's height, which moves the knob under the cursor mid-drag.
+  const center = useRef<{ x: number; y: number } | null>(null);
+
   const fromPointer = useCallback((clientX: number, clientY: number) => {
     const svg = svgRef.current;
     if (!svg) return;
-    const box = svg.getBoundingClientRect();
-    const dx = clientX - (box.left + box.width / 2);
-    const dy = clientY - (box.top + box.height / 2);
+    if (!center.current) {
+      const box = svg.getBoundingClientRect();
+      center.current = { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+    }
+    const dx = clientX - center.current.x;
+    const dy = clientY - center.current.y;
     let deg = (Math.atan2(dy, dx) * 180) / Math.PI + 90; // 0 at 12 o'clock
     if (deg > 180) deg -= 360;
     deg = Math.max(START, Math.min(START + SWEEP, deg));
@@ -104,10 +111,17 @@ export default function StormDial() {
         onKeyDown={onKey}
         onPointerDown={(e) => {
           (e.target as Element).setPointerCapture?.(e.pointerId);
+          center.current = null;
           fromPointer(e.clientX, e.clientY);
         }}
         onPointerMove={(e) => {
           if (e.buttons) fromPointer(e.clientX, e.clientY);
+        }}
+        onPointerUp={() => {
+          center.current = null;
+        }}
+        onPointerCancel={() => {
+          center.current = null;
         }}
       >
         <defs>
@@ -162,15 +176,20 @@ export default function StormDial() {
         </button>
       </div>
 
-      {bundle && !inRange && !tuneOpen && (
-        <p role="alert" data-testid="dial-advisory" className="mt-2 text-center text-[10.5px] leading-snug text-alert-300">
-          <span className="font-mono text-[9.5px] font-bold tracking-wider">BEYOND TRAINING DATA</span>
-          <br />
-          {baselineBeyond
-            ? `the real storm (${baselinePeak.toFixed(1)} mV/m) already tops the 2010–2019 max of ${trainMax.toFixed(1)}`
-            : `coupling ${peakCoupling.toFixed(1)} mV/m vs ${trainMax.toFixed(1)} max (2010–2019)`}
-        </p>
-      )}
+      {/* A fixed-height slot: the card is bottom-anchored, so an advisory that appears and disappears
+          would resize it and move the knob under the cursor. Hidden while fine-tune is open
+          (the full panel carries the warning), but the space stays reserved. */}
+      <div className="mt-2 flex h-[4.25rem] w-full items-start justify-center">
+        {bundle && !inRange && !tuneOpen && (
+          <p role="alert" data-testid="dial-advisory" className="text-center text-[10.5px] leading-snug text-alert-300">
+            <span className="font-mono text-[9.5px] font-bold tracking-wider">BEYOND TRAINING DATA</span>
+            <br />
+            {baselineBeyond
+              ? `the real storm (${baselinePeak.toFixed(1)} mV/m) already tops the 2010–2019 max of ${trainMax.toFixed(1)}`
+              : `coupling ${peakCoupling.toFixed(1)} mV/m vs ${trainMax.toFixed(1)} max (2010–2019)`}
+          </p>
+        )}
+      </div>
     </section>
   );
 }

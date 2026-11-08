@@ -214,6 +214,22 @@ test.describe("controls", () => {
     expect(errors).toEqual([]);
   });
 
+  test("the knob does not move when the training-range warning appears and disappears", async ({ page }) => {
+    await openReady(page);
+    await knob(page).focus();
+    // Gannon is in range at the minimum setting and beyond it at 1x and above.
+    await page.keyboard.press("Home");
+    await expect(page.getByTestId("dial-advisory")).toHaveCount(0);
+    const low = await knob(page).boundingBox();
+    await page.keyboard.press("End");
+    await expect(page.getByTestId("dial-advisory")).toContainText("BEYOND TRAINING DATA");
+    const high = await knob(page).boundingBox();
+    // The card is bottom-anchored: if the advisory resized it, the knob would shift under the
+    // cursor and a drag across the threshold would flip-flop between the two states.
+    expect(high?.y).toBe(low?.y);
+    expect(high?.height).toBe(low?.height);
+  });
+
   test("fine-tune sliders change the prediction, flag extrapolation, and Reset restores it", async ({ page }) => {
     const errors = trackErrors(page);
     await openReady(page);
