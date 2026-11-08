@@ -152,13 +152,13 @@ export default function TopBar() {
         </div>
       </div>
 
-      <nav aria-label="View" className="pointer-events-auto glass flex shrink-0 items-center gap-0.5 p-1">
-        <button type="button" className="icon-btn" aria-label="Fit whole scene" data-tip="Fit scene  0" data-tip-pos="left" onClick={() => st().focusOn("overview")}>
+      <nav aria-label="View" className="toolbar glass pointer-events-auto shrink-0 !rounded-full">
+        <button type="button" className="tool-btn" aria-label="Fit whole scene" data-tip="Fit scene  0" data-tip-pos="left" onClick={() => st().focusOn("overview")}>
           <FitIcon />
         </button>
         <button
           type="button"
-          className="icon-btn"
+          className="tool-btn"
           aria-label="Labels"
           aria-pressed={labels}
           data-tip="Labels  L"
@@ -167,9 +167,10 @@ export default function TopBar() {
         >
           <LabelIcon />
         </button>
+        <span className="tool-sep" aria-hidden="true" />
         <button
           type="button"
-          className="icon-btn"
+          className="tool-btn"
           aria-label="Model and validation"
           aria-expanded={panel === "model"}
           data-tip="Model & validation  M"
@@ -180,7 +181,7 @@ export default function TopBar() {
         </button>
         <button
           type="button"
-          className="icon-btn"
+          className="tool-btn"
           aria-label="Help"
           aria-expanded={panel === "help"}
           data-tip="Guide & shortcuts  ?"

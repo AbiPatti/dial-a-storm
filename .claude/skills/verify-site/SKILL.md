@@ -55,6 +55,8 @@ affected) and drives it in headless Chromium. `web/e2e/site.spec.ts` covers:
 - playback: Play, Pause, scrub, arrow-key stepping, Home, replay speed, Simulate and Space
 - scene interaction: selecting Earth / magnetopause / solar wind / aurora opens their detail card,
   Esc and Close dismiss it, and the Labels toggle hides and restores the labels
+- the landing page: scrolling dives into the storm and reveals the app (skipped on reload in the
+  same tab session), and a small scroll springs back to the title
 - the guide opens on a first visit, its superstorm demo runs, and it stays closed after reload
 
 First run on a new machine: `npx playwright install chromium`.

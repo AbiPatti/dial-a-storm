@@ -12,7 +12,7 @@ import { useDialStore, type ViewId } from "@/lib/store";
  * Orbit camera with eased fly-to presets.
  *
  * - Drag to orbit, scroll / pinch to zoom (clamped), double-click an object to fly to it.
- * - On first load the camera glides in from deep space to the overview.
+ * - The camera glides in from deep space to the overview as the landing page dissolves.
  * - Any user drag cancels an in-flight transition, so the rig never fights the hand.
  * - With prefers-reduced-motion the camera jumps instead of flying.
  */
@@ -71,10 +71,11 @@ export default function CameraRig() {
       introDone = true;
       go("overview");
     };
-    if (useDialStore.getState().status === "ready") intro();
+    const ready = (s: { status: string; landing: string }) => s.status === "ready" && s.landing !== "landing";
+    if (ready(useDialStore.getState())) intro();
     const unsub = useDialStore.subscribe((s, prev) => {
       if (s.focus.nonce !== prev.focus.nonce) go(s.focus.view);
-      if (s.status === "ready" && prev.status !== "ready") intro();
+      if (ready(s) && !ready(prev)) intro();
     });
     return () => {
       unsub();

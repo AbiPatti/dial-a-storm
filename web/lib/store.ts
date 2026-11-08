@@ -16,6 +16,8 @@ export type LoadStatus = "idle" | "loading" | "ready" | "error";
 export type SceneObject = "sun" | "earth" | "magnetopause" | "aurora";
 /** Camera presets the rig can fly to. */
 export type ViewId = "overview" | SceneObject;
+/** Landing page: title screen, scroll transition into the scene, then the app. */
+export type LandingPhase = "landing" | "entering" | "entered";
 /** Level-3 panels (only one open at a time). */
 export type PanelId = "storms" | "model" | "help";
 
@@ -60,6 +62,7 @@ export interface DialState {
   focus: { view: ViewId; nonce: number };
   labels: boolean;
   panel: PanelId | null;
+  landing: LandingPhase;
 
   init: () => Promise<void>;
   selectStorm: (id: string) => Promise<void>;
@@ -77,6 +80,7 @@ export interface DialState {
   focusOn: (v: ViewId) => void;
   toggleLabels: () => void;
   openPanel: (p: PanelId | null) => void;
+  setLanding: (p: LandingPhase) => void;
   /** Move to the previous (-1) or next (+1) storm in the catalogue. */
   stepStorm: (dir: 1 | -1) => void;
 }
@@ -138,6 +142,7 @@ export const useDialStore = create<DialState>()((set, get) => ({
   focus: { view: "overview", nonce: 0 },
   labels: true,
   panel: null,
+  landing: "landing",
 
   init: async () => {
     if (get().status === "loading" || get().status === "ready") return;
@@ -235,6 +240,9 @@ export const useDialStore = create<DialState>()((set, get) => ({
   focusOn: (view) => set((s) => ({ focus: { view, nonce: s.focus.nonce + 1 } })),
   toggleLabels: () => set((s) => ({ labels: !s.labels })),
   openPanel: (p) => set({ panel: p }),
+  setLanding: (p) => {
+    if (get().landing !== p) set({ landing: p });
+  },
   stepStorm: (dir) => {
     const { storms, activeStormId } = get();
     if (!storms.length) return;

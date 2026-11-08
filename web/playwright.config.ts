@@ -4,7 +4,9 @@ const PORT = 3100;
 
 export default defineConfig({
   testDir: "./e2e",
-  timeout: 30_000,
+  // Software WebGL (SwiftShader) renders the scene and landing shader on the CPU, and tests run in
+  // parallel; a few interaction tests need more than 30 s under that load.
+  timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,
   retries: process.env.CI ? 1 : 0,

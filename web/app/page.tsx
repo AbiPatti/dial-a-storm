@@ -1,7 +1,8 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import Landing from "@/components/landing/Landing";
 import DialPanel from "@/components/hud/DialPanel";
 import GuidePanel, { guideSeen } from "@/components/hud/GuidePanel";
 import InfoPanel from "@/components/hud/InfoPanel";
@@ -24,18 +25,30 @@ export default function Page() {
   const init = useDialStore((s) => s.init);
   const status = useDialStore((s) => s.status);
   const error = useDialStore((s) => s.error);
+  const entered = useDialStore((s) => s.landing === "entered");
+  const hud = useRef<HTMLElement>(null);
   usePlayback();
   useShortcuts();
 
+  // Data loads behind the landing page, so the scene is ready by the time the user scrolls in.
   useEffect(() => {
     void init();
-    if (!guideSeen()) useDialStore.getState().openPanel("help");
   }, [init]);
+
+  // The HUD is hidden from pointer, keyboard and screen readers until the landing has dissolved.
+  useEffect(() => {
+    hud.current?.toggleAttribute("inert", !entered);
+    if (entered && !guideSeen()) useDialStore.getState().openPanel("help");
+  }, [entered]);
 
   return (
     <>
       <SpaceCanvas />
-      <main className="pointer-events-none fixed inset-0 z-10 flex flex-col">
+      <main
+        ref={hud}
+        aria-hidden={!entered}
+        className={`hud-reveal pointer-events-none fixed inset-0 z-10 flex flex-col ${entered ? "opacity-100" : "opacity-0"}`}
+      >
         <TopBar />
 
         <div className="relative min-h-0 flex-1 px-3 sm:px-4">
@@ -69,6 +82,7 @@ export default function Page() {
       </main>
       <ModelDrawer />
       <GuidePanel />
+      <Landing />
     </>
   );
 }

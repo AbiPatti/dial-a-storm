@@ -39,6 +39,7 @@ web/                      Next.js 14 App Router, client-only
   components/scene/       R3F scene (the primary interface): SpaceCanvas, Sun, Earth, AuroraRing,
                           SolarWindParticles, Magnetopause (shell + GEO ring), SceneLabels,
                           SelectionHalo, CameraRig (orbit + fly-to views), pick.ts (selection)
+  components/landing/     Landing (title screen, scroll-driven dive into the app), StormCanvas (shader)
   components/hud/         TopBar (storm picker), DialPanel, TimelineDock, InfoPanel (selected
                           object), ModelDrawer (validation + method), GuidePanel (intro, shortcuts)
   components/deck/        ComparisonChart (SVG)

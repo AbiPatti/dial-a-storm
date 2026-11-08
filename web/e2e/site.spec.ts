@@ -11,6 +11,8 @@ function trackErrors(page: Page): string[] {
 }
 
 const GUIDE_KEY = "dial-a-storm:guide-seen";
+const ENTERED_KEY = "dial-a-storm:entered";
+const landing = (page: Page) => page.getByRole("region", { name: "Welcome" });
 const dials = (page: Page) => page.getByRole("region", { name: "Solar wind dials" });
 const playback = (page: Page) => page.getByRole("region", { name: "Playback" });
 const scrub = (page: Page) => page.getByRole("slider", { name: "Scrub playback time" });
@@ -25,9 +27,15 @@ async function pressGlobal(page: Page, key: string) {
   await page.keyboard.press(key);
 }
 
-/** Load the page (guide already seen) and wait until the default storm (the hold-out) is ready. */
+/** Load the page (landing and guide already seen) and wait until the default storm is ready. */
 async function openReady(page: Page) {
-  await page.addInitScript((key) => window.localStorage.setItem(key, "1"), GUIDE_KEY);
+  await page.addInitScript(
+    ([guide, entered]) => {
+      window.localStorage.setItem(guide, "1");
+      window.sessionStorage.setItem(entered, "1");
+    },
+    [GUIDE_KEY, ENTERED_KEY],
+  );
   await page.goto("/");
   await expect(stormChip(page)).toContainText("Gannon");
   await expect(peak(page)).not.toHaveText(/^—/);
@@ -217,10 +225,46 @@ test.describe("scene interaction", () => {
   });
 });
 
+test.describe("landing", () => {
+  test("scrolling dives into the storm and reveals the app", async ({ page }) => {
+    const errors = trackErrors(page);
+    await page.goto("/");
+    await expect(landing(page)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Dial-a-Storm/i);
+    // The HUD is inert while the landing is up.
+    await expect(page.getByRole("button", { name: "Model and validation" })).toHaveCount(0);
+
+    await page.mouse.move(720, 450);
+    for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 300);
+    await expect(landing(page)).toHaveCount(0, { timeout: 30_000 });
+    await expect(page.getByRole("button", { name: "Model and validation" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Guide" })).toBeVisible();
+
+    // Same tab session: reloading skips straight to the app.
+    await page.reload();
+    await expect(stormChip(page)).toBeVisible();
+    await expect(landing(page)).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  test("a small scroll springs back to the title", async ({ page }) => {
+    await page.goto("/");
+    await expect(landing(page)).toBeVisible();
+    await page.mouse.move(720, 450);
+    await page.mouse.wheel(0, 40);
+    await page.waitForTimeout(1500);
+    await expect(landing(page)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Model and validation" })).toHaveCount(0);
+  });
+});
+
 test.describe("guide", () => {
   test("opens on the first visit, runs the superstorm demo, then stays closed", async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto("/");
+    await expect(landing(page)).toBeVisible();
+    await page.getByRole("button", { name: "Enter Dial-a-Storm" }).click();
+    await expect(landing(page)).toHaveCount(0, { timeout: 30_000 });
     const guide = page.getByRole("dialog", { name: "Guide" });
     await expect(guide).toBeVisible();
     await expect(peak(page)).not.toHaveText(/^—/);

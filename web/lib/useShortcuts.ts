@@ -29,6 +29,7 @@ export function useShortcuts(): void {
       const tag = el?.tagName;
       const inField = tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA" || el?.isContentEditable;
       const s = useDialStore.getState();
+      if (s.landing !== "entered") return;
 
       if (e.key === "Escape") {
         if (s.panel) s.openPanel(null);
