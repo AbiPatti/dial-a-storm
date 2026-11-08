@@ -1,168 +1,154 @@
 "use client";
 
-import type { ReactNode } from "react";
+import { useRef, type ReactNode, type RefObject } from "react";
 import HoldoutSection from "@/components/ui/HoldoutSection";
 import { formatDate } from "@/lib/live";
+import { prefersReducedMotion } from "@/lib/motion";
 import { tierById } from "@/lib/severity";
-import { useDialStore, type SceneObject } from "@/lib/store";
+import { useDialStore } from "@/lib/store";
+import ChainStory from "./ChainStory";
+import { Reveal, ScrollerContext, useInView, useScrollVar } from "./scroll";
 
 /**
  * Long-form explainer tab: the physics chain from Sun to aurora, how the model works, the honest
  * hold-out test, the storm catalogue and the limits of the data. Every number on this page comes
  * from manifest.json / storms.json, so it stays correct when the pipeline is re-run.
+ *
+ * Motion follows Apple's product pages: native scrolling drives a pinned hero, a pinned
+ * scrollytelling diagram, a video that grows into place and count-up figures; everything else
+ * fades up as it enters. See ./scroll.tsx and the `.x-*` rules in globals.css.
  */
 
 const fmt = (v: number | null | undefined, d = 0) => (v === null || v === undefined || !Number.isFinite(v) ? "—" : v.toFixed(d));
 
 function Section({ id, eyebrow, title, children }: { id?: string; eyebrow: string; title: ReactNode; children: ReactNode }) {
   return (
-    <section id={id} aria-labelledby={id ? `${id}-title` : undefined} className="border-t border-white/[0.06] py-14 first:border-t-0">
-      <p className="micro !text-ember-300">{eyebrow}</p>
-      <h2 id={id ? `${id}-title` : undefined} className="mt-3 max-w-3xl font-serif text-4xl leading-[1.05] tracking-tight text-stone-100 md:text-5xl">
-        {title}
-      </h2>
-      <div className="mt-6">{children}</div>
+    <section id={id} aria-labelledby={id ? `${id}-title` : undefined} className="x-section">
+      <Reveal>
+        <p className="micro !text-ember-300">{eyebrow}</p>
+        <h2 id={id ? `${id}-title` : undefined} className="x-section-title font-serif">
+          {title}
+        </h2>
+      </Reveal>
+      <div className="mt-8 md:mt-10">{children}</div>
     </section>
   );
 }
 
-/** Button that jumps to the simulator and flies the camera to an object. */
-function ShowMe({ object, children }: { object: SceneObject; children: ReactNode }) {
+/** Pinned opening: the headline recedes into the glow as the introduction rises in. */
+function Hero() {
+  const ref = useRef<HTMLElement>(null);
+  useScrollVar(ref, "track");
   return (
-    <button
-      type="button"
-      className="chip mt-3 !border-ember-400/30 !text-ember-300"
-      onClick={() => {
-        const s = useDialStore.getState();
-        s.setTab("simulator");
-        s.select(object);
-        s.focusOn(object);
-      }}
-    >
-      {children} →
-    </button>
+    <section ref={ref} className="x-hero" aria-labelledby="explainer-title">
+      <div className="x-hero-stage">
+        <div className="x-hero-glow" aria-hidden="true" />
+        <div className="x-hero-copy">
+          <p className="micro x-hero-eyebrow !text-ember-300">Explainer</p>
+          <h2 id="explainer-title" className="x-hero-title font-serif">
+            How a storm on the Sun <em className="italic text-ember-300">reaches Earth.</em>
+          </h2>
+          <p className="x-hero-intro">
+            Every storm in this app is real, measured by NASA&apos;s OMNI solar-wind archive from 2010 to 2026. Here is what happens, step by step,
+            and how a machine-learning model learns to predict Earth&apos;s response. The numbers below are for the storm you have loaded.
+          </p>
+        </div>
+        <div className="x-hero-hint" aria-hidden="true">
+          Scroll
+          <span />
+        </div>
+      </div>
+    </section>
   );
 }
 
-function Chain() {
+/** A number that counts up from zero the first time it scrolls into view. */
+function CountUp({ value, decimals = 0, suffix = "" }: { value: number | null; decimals?: number; suffix?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const final = value === null ? "—" : `${value.toFixed(decimals)}${suffix}`;
+  useInView(
+    ref,
+    (el) => {
+      if (value === null || prefersReducedMotion()) return;
+      const t0 = performance.now();
+      const ms = 1400;
+      const step = (now: number) => {
+        const k = Math.min(1, (now - t0) / ms);
+        const e = 1 - Math.pow(1 - k, 4);
+        el.textContent = `${(value * e).toFixed(decimals)}${suffix}`;
+        if (k < 1) requestAnimationFrame(step);
+      };
+      el.textContent = `${(0).toFixed(decimals)}${suffix}`;
+      requestAnimationFrame(step);
+    },
+    0.4,
+  );
+  return (
+    <span ref={ref} aria-label={final}>
+      {final}
+    </span>
+  );
+}
+
+/** Three headline figures, all read from the data. */
+function Figures() {
+  const manifest = useDialStore((s) => s.manifest);
   const storms = useDialStore((s) => s.storms);
-  const activeId = useDialStore((s) => s.activeStormId);
-  const st = storms.find((s) => s.id === activeId) ?? null;
-  const name = st?.name ?? "this storm";
-  const steps: { k: string; title: string; body: ReactNode; stat?: ReactNode; object?: SceneObject; cta?: string }[] = [
-    {
-      k: "01",
-      title: "The Sun erupts",
-      body: (
-        <>
-          <p>
-            A solar flare is a burst of light from a sunspot region. The storm itself comes from what usually follows it: a{" "}
-            <b>coronal mass ejection</b> (CME), a billion-tonne cloud of magnetised plasma thrown into space.
-          </p>
-          <p>
-            The dataset starts at Earth, not at the Sun. It records the CME only when it arrives, one to three days later. It holds no flare
-            (X-ray) measurements.
-          </p>
-        </>
-      ),
-    },
-    {
-      k: "02",
-      title: "The solar wind hits",
-      body: (
-        <>
-          <p>
-            A fast CME drives a <b>shock</b> ahead of it. At Earth, wind speed jumps in minutes and the dense, fast plasma squeezes Earth&apos;s
-            magnetic bubble (the <b>magnetopause</b>) closer to the planet.
-          </p>
-          <p>Dynamic pressure, Pdyn = 1.6726×10⁻⁶ · n · v² nPa, sets how hard it squeezes.</p>
-        </>
-      ),
-      stat: st && (
-        <>
-          {name}: up to <b>{fmt(st.max_speed_km_s)} km/s</b> and <b>{fmt(st.max_pdyn_nPa, 1)} nPa</b>
-        </>
-      ),
-      object: "magnetopause",
-      cta: "Watch the shield compress",
-    },
-    {
-      k: "03",
-      title: "The field turns south",
-      body: (
-        <>
-          <p>
-            Pressure alone makes a bump, not a storm. The key is the direction of the CME&apos;s own magnetic field. When its <b>Bz</b> points
-            south, opposite to Earth&apos;s field, the two link up (<b>magnetic reconnection</b>) and the solar wind&apos;s energy gets in.
-          </p>
-          <p>
-            The coupling v·Bs (speed × southward field) is the standard measure of that driving. Northward field gives zero coupling: in the
-            simulator, no reconnection flash and no particles captured into the polar cusps.
-          </p>
-        </>
-      ),
-      stat: st && (
-        <>
-          {name}: Bz down to <b>{fmt(st.min_bz_nT, 1)} nT</b>, coupling up to <b>{fmt(st.peak_coupling_mV_m, 1)} mV/m</b>
-        </>
-      ),
-      object: "sun",
-      cta: "See the solar-wind drivers",
-    },
-    {
-      k: "04",
-      title: "The ring current fills",
-      body: (
-        <>
-          <p>
-            Energised particles are pushed into a <b>ring current</b> circling Earth a few Earth radii out. Its magnetic field opposes
-            Earth&apos;s, so ground magnetometers see the field weaken. <b>SYM-H</b> measures that dip in nanotesla. The more negative the
-            dip, the bigger the storm.
-          </p>
-          <p>
-            Storms have a shape. A short positive bump at the shock, a <b>main phase</b> lasting hours while the ring current builds, and a{" "}
-            <b>recovery</b> lasting a day or more as it drains. The simulator&apos;s timeline labels each phase as it plays.
-          </p>
-        </>
-      ),
-      stat: st && (
-        <>
-          {name}: SYM-H reached <b>{fmt(st.peak_sym_h)} nT</b> on {formatDate(st.peak_time)}
-        </>
-      ),
-      object: "earth",
-      cta: "Watch Earth's response",
-    },
-    {
-      k: "05",
-      title: "What people see",
-      body: (
-        <>
-          <p>
-            The auroral oval slides toward the equator as the storm deepens; the simulator uses lat ≈ 65° − 0.05·|SYM-H|, floored at 38°. In
-            the strongest storms the magnetopause is pushed inside geostationary orbit (6.6 Earth radii), leaving satellites there exposed to
-            the raw solar wind.
-          </p>
-        </>
-      ),
-      object: "aurora",
-      cta: "See how far south the aurora reaches",
-    },
+  const g = manifest?.grid;
+  const points = g ? g.bz_south_mult.length * g.speed_mult.length * g.density_mult.length : null;
+  const h = manifest?.holdout;
+  const key = manifest?.model.kind === "hybrid_ridge_xgb" ? "hybrid" : "burton";
+  const predicted = h?.predicted_peak_nT[key] ?? null;
+  const ratio = predicted !== null && h?.observed_peak_nT ? (predicted / h.observed_peak_nT) * 100 : null;
+  const who = key === "hybrid" ? "the hybrid model, which never saw it" : "the physics stand-in";
+  const items = [
+    { value: storms.length || null, label: "of the strongest geomagnetic storms of 2010–2026, replayed from real measurements" },
+    { value: points, label: "what-if scenarios precomputed for every storm, blended live as you turn the dials" },
+    { value: ratio, suffix: "%", label: `of the ${h?.name ?? "Gannon storm"}'s depth predicted by ${who}` },
   ];
   return (
-    <ol className="grid gap-4 md:grid-cols-2">
-      {steps.map((s) => (
-        <li key={s.k} className="glass p-5 md:[&:last-child]:col-span-2">
-          <div className="flex items-baseline gap-3">
-            <span className="font-mono text-[11px] text-ember-300">{s.k}</span>
-            <h3 className="font-serif text-2xl text-stone-100">{s.title}</h3>
+    <section className="x-figures" aria-label="Key figures">
+      {items.map((it, i) => (
+        <Reveal key={i} delay={i * 120} className="x-figure">
+          <div className="x-figure-value font-serif">
+            <CountUp value={it.value} suffix={it.suffix} />
           </div>
-          <div className="prose-dial mt-3">{s.body}</div>
-          {s.stat && <p className="mt-3 rounded-lg bg-white/[0.04] px-3 py-2 font-mono text-[12px] text-stone-300">{s.stat}</p>}
-          {s.object && s.cta && <ShowMe object={s.object}>{s.cta}</ShowMe>}
-        </li>
+          <p className="x-figure-label">{it.label}</p>
+        </Reveal>
       ))}
-    </ol>
+    </section>
+  );
+}
+
+/** The narrated video grows from an inset card to full width as it scrolls into view. */
+function Video() {
+  const ref = useRef<HTMLDivElement>(null);
+  useScrollVar(ref, "through");
+  return (
+    <section id="video" aria-labelledby="video-title" className="x-section">
+      <Reveal>
+        <p className="micro !text-ember-300">Watch</p>
+        <h2 id="video-title" className="x-section-title font-serif">
+          The science in 30 seconds
+        </h2>
+        <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-stone-300">
+          A narrated walk-through of the physics behind the simulation: from the solar wind to the magnetosphere, the ring current and the
+          aurora.
+        </p>
+      </Reveal>
+      <div ref={ref} className="x-video">
+        <div className="x-video-frame">
+          <video
+            src="/video/dial-a-storm-science.mp4"
+            controls
+            playsInline
+            preload="metadata"
+            aria-label="Narrated video: the science of the Dial-a-Storm simulation"
+            className="block aspect-video w-full bg-black"
+          />
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -204,14 +190,14 @@ function Method() {
         </p>
       )}
       <ol className="grid gap-4 md:grid-cols-2">
-        {steps.map((s) => (
-          <li key={s.k} className="glass p-5">
+        {steps.map((s, i) => (
+          <Reveal as="li" key={s.k} delay={i * 90} className="glass p-5">
             <div className="flex items-baseline gap-3">
               <span className="font-mono text-[11px] text-ember-300">{s.k}</span>
               <h3 className="font-serif text-2xl text-stone-100">{s.title}</h3>
             </div>
             <p className="mt-3 text-[14px] leading-relaxed text-stone-300">{s.body}</p>
-          </li>
+          </Reveal>
         ))}
       </ol>
     </>
@@ -345,11 +331,11 @@ function HonestNotes() {
   ];
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      {notes.map((n) => (
-        <article key={n.title} className="glass p-5">
+      {notes.map((n, i) => (
+        <Reveal as="article" key={n.title} delay={(i % 2) * 90} className="glass p-5">
           <h3 className="font-serif text-xl text-stone-100">{n.title}</h3>
           <div className="prose-dial mt-2">{n.body}</div>
-        </article>
+        </Reveal>
       ))}
     </div>
   );
@@ -357,46 +343,64 @@ function HonestNotes() {
 
 export default function ExplainerTab() {
   const manifest = useDialStore((s) => s.manifest);
+  const scroller = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
   return (
-    <div id="explainer-panel" role="tabpanel" aria-labelledby="tab-explainer" className="fixed inset-0 z-20 overflow-y-auto bg-ink">
-      <div className="mx-auto max-w-5xl px-5 pb-16 pt-24 md:px-8">
-        <Section eyebrow="Explainer" title={<>How a storm on the Sun <em className="italic text-ember-300">reaches Earth.</em></>}>
-          <p className="max-w-2xl text-[17px] leading-relaxed text-stone-300">
-            Every storm in this app is real, measured by NASA&apos;s OMNI solar-wind archive from 2010 to 2026. Here is what happens, step by step,
-            and how a machine-learning model learns to predict Earth&apos;s response. The numbers below are for the storm you have loaded.
-          </p>
-          <div className="mt-8">
-            <Chain />
+    <div
+      ref={scroller}
+      id="explainer-panel"
+      role="tabpanel"
+      aria-labelledby="tab-explainer"
+      className="x-scroller fixed inset-0 z-20 overflow-y-auto bg-ink"
+    >
+      <ScrollerContext.Provider value={scroller}>
+        <div ref={content}>
+          <ProgressBar content={content} />
+          <Hero />
+          <div className="mx-auto max-w-5xl px-5 md:px-8">
+            <ChainStory />
           </div>
-        </Section>
+          <Figures />
+          <div className="mx-auto max-w-5xl px-5 pb-16 md:px-8">
+            <Video />
 
-        <Section id="method" eyebrow="How it works" title="Teaching a machine to see a magnetosphere">
-          <Method />
-        </Section>
+            <Section id="method" eyebrow="How it works" title="Teaching a machine to see a magnetosphere">
+              <Method />
+            </Section>
 
-        {/* HoldoutSection carries its own eyebrow and heading. */}
-        <div className="border-t border-white/[0.06] py-14">
-          <div className="glass p-5 md:p-7">
-            <HoldoutSection />
+            {/* HoldoutSection carries its own eyebrow and heading. */}
+            <div className="x-section">
+              <Reveal className="glass p-5 md:p-7">
+                <HoldoutSection />
+              </Reveal>
+            </div>
+
+            <Section id="catalogue" eyebrow="The data" title="Eight storms, 2010–2026">
+              <Reveal>
+                <Catalogue />
+              </Reveal>
+            </Section>
+
+            <Section id="notes" eyebrow="Honest notes" title="What to keep in mind">
+              <HonestNotes />
+            </Section>
+
+            <footer className="border-t border-white/[0.06] pt-6 text-[12px] leading-relaxed text-stone-500">
+              <p>{manifest?.data.citation ?? "NASA/GSFC OMNI 5-min data via OMNIWeb/CDAWeb."}</p>
+              <p className="mt-1">
+                Artifacts: {manifest ? `${manifest.source} · ${manifest.model.kind} · generated ${formatDate(manifest.generated_at)}` : "—"} · Sheridan
+                Datathon 2026 · NASA Track, Problem 2.
+              </p>
+            </footer>
           </div>
         </div>
-
-        <Section id="catalogue" eyebrow="The data" title="Eight storms, 2010–2026">
-          <Catalogue />
-        </Section>
-
-        <Section id="notes" eyebrow="Honest notes" title="What to keep in mind">
-          <HonestNotes />
-        </Section>
-
-        <footer className="border-t border-white/[0.06] pt-6 text-[12px] leading-relaxed text-stone-500">
-          <p>{manifest?.data.citation ?? "NASA/GSFC OMNI 5-min data via OMNIWeb/CDAWeb."}</p>
-          <p className="mt-1">
-            Artifacts: {manifest ? `${manifest.source} · ${manifest.model.kind} · generated ${formatDate(manifest.generated_at)}` : "—"} · Sheridan
-            Datathon 2026 · NASA Track, Problem 2.
-          </p>
-        </footer>
-      </div>
+      </ScrollerContext.Provider>
     </div>
   );
+}
+
+/** Hairline reading-progress bar: whole-page progress lands in `--sp` on the content wrapper. */
+function ProgressBar({ content }: { content: RefObject<HTMLDivElement> }) {
+  useScrollVar(content, "track", "--sp");
+  return <div className="x-progress" aria-hidden="true" />;
 }

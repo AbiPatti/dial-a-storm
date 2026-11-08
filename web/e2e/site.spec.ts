@@ -141,6 +141,10 @@ test.describe("page", () => {
     await expect(dials(page)).toHaveCount(0);
     await expect(panel.getByRole("heading", { name: /reaches Earth/ })).toBeVisible();
     await expect(panel.getByText("Teaching a machine to see a magnetosphere")).toBeVisible();
+    // Narrated science video, served from public/video.
+    const video = panel.locator("#video video");
+    await expect(video).toHaveAttribute("src", "/video/dial-a-storm-science.mp4");
+    expect((await page.request.get("/video/dial-a-storm-science.mp4")).status()).toBe(200);
     await expect(panel.locator("#honest-test")).toBeVisible();
     await expect(panel.locator("#honest-test").getByRole("img").first()).toBeVisible();
     // Catalogue: one row per storm, straight from storms.json.
@@ -160,6 +164,34 @@ test.describe("page", () => {
     await page.keyboard.press("ArrowLeft");
     await expect(tabs.getByRole("tab", { name: "Simulator" })).toHaveAttribute("aria-selected", "true");
     await expect(knob(page)).toBeVisible();
+    expect(errors).toEqual([]);
+  });
+
+  test("explainer scroll story: pinned hero, active chain step and figures", async ({ page }) => {
+    const errors = trackErrors(page);
+    await openReady(page);
+    await page.getByRole("tab", { name: "Explainer" }).click();
+    const panel = page.locator("#explainer-panel");
+    await panel.evaluate((el) => (el.style.scrollBehavior = "auto"));
+
+    // The pinned hero's progress follows native scrolling.
+    const hero = panel.locator(".x-hero");
+    const heroProgress = () => hero.evaluate((el) => Number(el.style.getPropertyValue("--p")));
+    await expect.poll(heroProgress).toBe(0);
+    await panel.evaluate((el) => (el.scrollTop = el.clientHeight * 0.6));
+    await expect.poll(heroProgress).toBeGreaterThan(0.3);
+
+    // Scrolling a step to the middle of the screen makes it active and lights the diagram.
+    const step3 = panel.locator(".x-chain-step").nth(2);
+    await step3.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await expect(step3).toHaveAttribute("data-active");
+    await expect(panel.locator(".x-diagram")).toHaveAttribute("data-step", "3");
+
+    // Headline figures come from the data (288 = 8 x 6 x 6 grid points) and count up on entry.
+    const figures = page.getByRole("region", { name: "Key figures" });
+    await figures.evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await expect(figures).toContainText("288");
+    await expect(figures).toContainText("%");
     expect(errors).toEqual([]);
   });
 

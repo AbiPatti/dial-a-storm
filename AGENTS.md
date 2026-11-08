@@ -55,6 +55,7 @@ web/                      Next.js 14 App Router, client-only
                           live.ts (per-frame physics), phases.ts (shock / main / recovery),
                           severity.ts, glsl.ts, usePlayback.ts,
                           useShortcuts.ts (keyboard), motion.ts (reduced motion)
+  public/video/           Narrated science video, shown in the Explainer tab
   public/data/            Committed JSON artifacts (source "PIPELINE": Ridge + XGBoost hybrid output)
 docs/                     CONTRACTS.md, ENGINEERING.md
 ```

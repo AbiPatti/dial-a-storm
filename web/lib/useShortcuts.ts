@@ -28,7 +28,7 @@ export function useShortcuts(): void {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const el = e.target as HTMLElement | null;
       const tag = el?.tagName;
-      const inField = tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA" || el?.isContentEditable;
+      const inField = tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA" || tag === "VIDEO" || el?.isContentEditable;
       const s = useDialStore.getState();
       if (s.landing !== "entered") return;
 
