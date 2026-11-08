@@ -300,6 +300,23 @@ test.describe("controls", () => {
   });
 });
 
+test.describe("solar eruption", () => {
+  test("scrubbing through the flare and CME draws without errors and keeps the HUD intact", async ({ page }) => {
+    const errors = trackErrors(page);
+    await openReady(page);
+    // Gannon: the CME launches about index 15 and reaches the bow shock about index 95.
+    for (const i of [8, 16, 30, 55, 80, 94, 120]) {
+      await scrub(page).fill(String(i));
+      await expect(scrub(page)).toHaveValue(String(i));
+      await page.waitForTimeout(250);
+      await expect(knob(page)).toBeVisible();
+    }
+    // The extrapolation warning is part of the HUD and must survive the eruption visuals.
+    await expect(page.getByTestId("dial-advisory")).toContainText("BEYOND TRAINING DATA");
+    expect(errors).toEqual([]);
+  });
+});
+
 test.describe("scene interaction", () => {
   test("selecting objects opens their details; Esc closes; labels toggle", async ({ page }) => {
     const errors = trackErrors(page);

@@ -15,6 +15,7 @@ import ReconnectionFlash from "./ReconnectionFlash";
 import RingCurrent from "./RingCurrent";
 import SceneLabels from "./SceneLabels";
 import SelectionHalo from "./SelectionHalo";
+import SolarEruption from "./SolarEruption";
 import SolarWindParticles from "./SolarWindParticles";
 import Sun from "./Sun";
 
@@ -49,6 +50,7 @@ export default function SpaceCanvas({ active = true }: { active?: boolean }) {
         <color attach="background" args={["#08060a"]} />
         <Stars radius={220} depth={80} count={6000} factor={4} saturation={0.15} fade speed={0.4} />
         <Sun />
+        <SolarEruption />
         <SolarWindParticles count={20_000} />
         <ImfLines />
         <Magnetopause />

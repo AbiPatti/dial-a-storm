@@ -4,6 +4,7 @@ import { useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, useRef } from "react";
 import * as THREE from "three";
 import { MAGNETOPAUSE_GLSL, SCENE } from "@/lib/glsl";
+import { bowShockX, eruptionAt, frontLeadX } from "@/lib/flare";
 import { liveFrame } from "@/lib/live";
 import { useDialStore } from "@/lib/store";
 
@@ -42,6 +43,8 @@ uniform float uSize;
 uniform float uPixelRatio;
 uniform float uSpeedNorm;
 uniform float uCapture;
+uniform float uFrontX;
+uniform float uSurge;
 uniform vec3 uCuspN;
 uniform vec3 uCuspS;
 uniform vec2 uViewport;
@@ -51,6 +54,7 @@ varying float vCompress;
 varying float vCaptured;
 varying vec2 vDir;
 varying float vStretch;
+varying float vFront;
 ${MAGNETOPAUSE_GLSL}
 
 // Effective obstacle radius at x: zero upstream of the shock, rising through the sheath, then
@@ -98,7 +102,17 @@ void main() {
   vCaptured = 0.0;
   vDir = vec2(1.0, 0.0);
   vStretch = 1.0;
-  if (aKeep > uDensityFrac) {
+  vFront = 0.0;
+  float factor = (34.0 + 1.5 * floor(aSeed.w * 7.999)) / 40.0;
+  float life = fract(aSeed.x + uPhase * factor);
+
+  // CME wave: behind the travelling front (closer to the Sun) the wind is denser and brighter,
+  // with a sharp bright edge at the front itself. Ahead of it the wind is still ambient.
+  float dxF = uFrontX - mix(uStartX, uEndX, life);
+  float body = step(0.0, dxF) * exp(-dxF / 5.0);
+  float edge = exp(-pow(dxF / 0.7, 2.0));
+  float surge = uSurge * clamp(body * 0.85 + edge * 0.4, 0.0, 1.0);
+  if (aKeep > min(1.0, uDensityFrac + surge)) {
     gl_Position = vec4(2.0, 2.0, 2.0, 1.0);
     gl_PointSize = 0.0;
     vAlpha = 0.0;
@@ -106,8 +120,7 @@ void main() {
     vCompress = 0.0;
     return;
   }
-  float factor = (34.0 + 1.5 * floor(aSeed.w * 7.999)) / 40.0;
-  float life = fract(aSeed.x + uPhase * factor);
+  vFront = uSurge * (0.5 * body + 1.2 * edge);
   float r = 6.5 * sqrt(aSeed.y);
   float ang = aSeed.z * 6.28318530718;
 
@@ -164,6 +177,7 @@ varying float vCompress;
 varying float vCaptured;
 varying vec2 vDir;
 varying float vStretch;
+varying float vFront;
 void main() {
   if (vAlpha <= 0.0) discard;
   // Rotate the sprite into the direction of travel (gl_PointCoord has y pointing down).
@@ -183,7 +197,8 @@ void main() {
   vec3 col = mix(slow, fast, vSpeed);
   col += vec3(1.0, 0.35, 0.4) * vCompress * 0.7;
   col = mix(col, vec3(1.0, 0.3, 0.8) * 1.6, vCaptured);
-  float a = soft * head * vAlpha * uBrightness * (0.55 + 1.2 * vCompress + 0.8 * vCaptured);
+  col = mix(col, vec3(1.0, 0.93, 0.74), clamp(vFront * 0.45, 0.0, 0.75));
+  float a = soft * head * vAlpha * uBrightness * (0.55 + 1.2 * vCompress + 0.8 * vCaptured) * (1.0 + 0.9 * vFront);
   gl_FragColor = vec4(col * a, 1.0);
 }
 `;
@@ -243,6 +258,8 @@ export default function SolarWindParticles({ count = 20_000 }: SolarWindParticle
           uSpeedNorm: { value: 0.2 },
           uBrightness: { value: 1 },
           uCapture: { value: 0 },
+          uFrontX: { value: -1000 },
+          uSurge: { value: 0 },
           uCuspN: { value: cuspPoint(1) },
           uCuspS: { value: cuspPoint(-1) },
           uViewport: { value: new THREE.Vector2(1, 1) },
@@ -283,6 +300,13 @@ export default function SolarWindParticles({ count = 20_000 }: SolarWindParticle
     u.uBrightness.value = 1.0 + 0.6 * Math.min(1, sm.density / 30);
     u.uStandoffRe.value = sm.standoff;
     u.uCapture.value = sm.capture;
+    const eruption = eruptionAt(s.bundle, s.cursor, s.tracePeak?.value ?? null);
+    if (eruption) {
+      u.uFrontX.value = frontLeadX(eruption.p, SCENE.windStartX, bowShockX(sm.standoff));
+      u.uSurge.value = eruption.strength * eruption.front;
+    } else {
+      u.uSurge.value = 0;
+    }
     u.uPixelRatio.value = dpr;
     (u.uViewport.value as THREE.Vector2).set(size.width * dpr, size.height * dpr);
   });
