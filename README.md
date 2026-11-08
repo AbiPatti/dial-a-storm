@@ -30,8 +30,8 @@ npm install
 npm run dev          # http://localhost:3000
 ```
 
-The repo ships with stand-in data (marked `FIXTURE` in the UI), so the app runs without Python or
-the dataset.
+The repo ships with the real model output (the Ridge + XGBoost hybrid, marked `PIPELINE` in the UI),
+so the app runs without Python or the dataset.
 
 Browser tests (Playwright) build the site and check data loading, storm selection, the sliders and
 playback. Run `npx playwright install chromium` once, then:
@@ -54,7 +54,8 @@ python -m venv .venv
 .venv/bin/python -m dial_a_storm             # runs tests, then rebuilds web/public/data/
 ```
 
-Other entry points: `python -m dial_a_storm.make_fixtures` regenerates the stand-in data, and each
+Other entry points: `python -m dial_a_storm.make_fixtures` writes a physics-only stand-in (`FIXTURE`)
+for working without the CSV (don't commit it), and each
 stage (`load`, `storms`, `features`, `model`, `export_grid`) can be run on its own with `python -m dial_a_storm.<stage>`.
 
 ## Model in one paragraph

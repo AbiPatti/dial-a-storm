@@ -40,7 +40,7 @@ dial-a-storm/
 │   └── data/          Local only, gitignored: raw/ holds the CSV, cache/ holds Parquet + models
 ├── web/               Next.js app
 │   ├── e2e/           Playwright browser tests
-│   └── public/data/   The JSON files the app loads (committed; stand-in "FIXTURE" data)
+│   └── public/data/   The JSON files the app loads (committed; real "PIPELINE" model output)
 └── docs/              CONTRACTS.md (JSON schemas), ENGINEERING.md (rules)
 ```
 
@@ -57,9 +57,9 @@ npm run dev
 Open **http://localhost:3000**.
 
 You should see a Sun, a solar-wind particle stream and Earth, with a control panel on the right
-and a SYM-H chart along the bottom. An orange **FIXTURE DATA** badge next to the title is
-expected. It means the predictions come from a stand-in physics model, not the trained ML model
-(Part 2 replaces them).
+and a SYM-H chart along the bottom. A grey **PIPELINE** badge next to the title means the
+predictions come from the trained Ridge + XGBoost model. (An orange **FIXTURE DATA** badge means
+someone ran `make_fixtures`, which swaps in a physics-only stand-in.)
 
 ### Try it
 
@@ -174,12 +174,13 @@ INFO dial_a_storm.model: Gannon observed peak -497.0 nT; predicted {'hybrid': -3
 INFO dial_a_storm.pipeline: pipeline finished in ...s -> .../web/public/data
 ```
 
-Refresh the browser (the dev server can stay running). The badge changes from **FIXTURE DATA** to
-**PIPELINE**, and the hold-out section compares the hybrid model with pure XGBoost.
+Refresh the browser (the dev server can stay running). The badge reads **PIPELINE**, and the
+hold-out section (Model & validation panel) compares the hybrid model with pure XGBoost.
 
-**Git note:** the pipeline overwrites the committed files in `web/public/data/`, so `git status`
-will show them as modified. Only commit them if the team has agreed to switch the shipped data to
-real model output. To undo the change:
+**Git note:** the pipeline overwrites the committed files in `web/public/data/`, which are already
+real pipeline output. On the same CSV, the predictions should match the committed files; the
+`generated_at` timestamps will differ, so `git status` still shows them as modified. Don't commit a
+re-run unless the model or data actually changed. To undo the change:
 
 ```bash
 git checkout -- web/public/data      # run from the repo root

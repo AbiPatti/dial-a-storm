@@ -48,7 +48,7 @@ web/                      Next.js 14 App Router, client-only
   lib/                    types.ts (Zod), data.ts (fetch), store.ts (Zustand), interpolate.ts,
                           live.ts (per-frame physics), severity.ts, glsl.ts, usePlayback.ts,
                           useShortcuts.ts (keyboard), motion.ts (reduced motion)
-  public/data/            Committed JSON artifacts (currently source "FIXTURE": physics stand-in)
+  public/data/            Committed JSON artifacts (source "PIPELINE": Ridge + XGBoost hybrid output)
 docs/                     CONTRACTS.md, ENGINEERING.md
 ```
 
@@ -109,6 +109,7 @@ npx playwright test -g "playback"   # one e2e test
 - Web change: `npm run typecheck` and `npm run test:e2e` both pass (the e2e run includes a
   production build). New user-visible behaviour gets a test in `web/e2e/`.
 - Follow `.claude/skills/verify-site/SKILL.md` for the full checklist, and report which steps ran.
-- `web/public/data/`: the full pipeline and `make_fixtures` both overwrite these committed files.
-  Don't commit regenerated artifacts unless the team asked for it. Restore them with
-  `git checkout -- web/public/data`.
+- `web/public/data/`: the committed files are real pipeline output. Re-running the full pipeline on
+  the same CSV should reproduce the model (check the Gannon line above); `make_fixtures` replaces
+  them with the physics stand-in. Never commit FIXTURE data, and don't commit regenerated artifacts
+  unless the team asked for it. Restore them with `git checkout -- web/public/data`.
