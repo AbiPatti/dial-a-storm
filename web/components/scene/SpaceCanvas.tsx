@@ -51,7 +51,7 @@ export default function SpaceCanvas({ active = true }: { active?: boolean }) {
         <Stars radius={220} depth={80} count={6000} factor={4} saturation={0.15} fade speed={0.4} />
         <Sun />
         <SolarEruption />
-        <SolarWindParticles count={20_000} />
+        <SolarWindParticles count={12_000} />
         <ImfLines />
         <Magnetopause />
         <ReconnectionFlash />

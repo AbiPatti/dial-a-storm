@@ -296,14 +296,16 @@ export default function SolarWindParticles({ count = 20_000 }: SolarWindParticle
     const u = material.uniforms;
     u.uPhase.value = phase.current;
     u.uSpeedNorm.value = THREE.MathUtils.clamp((sm.speed - 300) / 700, 0, 1);
-    u.uDensityFrac.value = THREE.MathUtils.clamp(0.2 + sm.density / 22, 0.2, 1);
-    u.uBrightness.value = 1.0 + 0.6 * Math.min(1, sm.density / 30);
+    // Visible share still follows the measured density, but caps at 75% so storms stay readable.
+    u.uDensityFrac.value = THREE.MathUtils.clamp(0.15 + sm.density / 35, 0.15, 0.75);
+    u.uBrightness.value = 0.85 + 0.4 * Math.min(1, sm.density / 30);
     u.uStandoffRe.value = sm.standoff;
     u.uCapture.value = sm.capture;
     const eruption = eruptionAt(s.bundle, s.cursor, s.tracePeak?.value ?? null);
     if (eruption) {
       u.uFrontX.value = frontLeadX(eruption.p, SCENE.windStartX, bowShockX(sm.standoff));
-      u.uSurge.value = eruption.strength * eruption.front;
+      // The CME adds density behind its front; kept at about half strength so it doesn't flood.
+      u.uSurge.value = 0.55 * eruption.strength * eruption.front;
     } else {
       u.uSurge.value = 0;
     }
