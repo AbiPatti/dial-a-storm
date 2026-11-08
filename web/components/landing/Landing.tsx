@@ -51,6 +51,7 @@ export default function Landing() {
     let last = performance.now();
     let touchY: number | null = null;
     const parallax = { x: 0, y: 0, tx: 0, ty: 0 };
+    let detach = () => {};
 
     // Wall-clock time of the commit; guarantees completion even at very low frame rates.
     let committedAt: number | null = null;
@@ -154,6 +155,7 @@ export default function Landing() {
           /* storage unavailable: the landing shows again on reload */
         }
         setLanding("entered");
+        detach();
         return;
       }
       raf = requestAnimationFrame(frame);
@@ -167,8 +169,10 @@ export default function Landing() {
     window.addEventListener("pointermove", onPointer, { passive: true });
     const cueEl = cueButton.current;
     cueEl?.addEventListener("click", commit);
-    return () => {
-      cancelAnimationFrame(raf);
+    // Landing stays mounted (it renders null once entered), so the window listeners must come off
+    // as soon as the dive completes. Otherwise their preventDefault keeps blocking wheel and touch
+    // scrolling (the Explainer tab) and Space / Enter / arrow keys for the rest of the session.
+    detach = () => {
       clearTimeout(idle);
       window.removeEventListener("wheel", onWheel);
       window.removeEventListener("touchstart", onTouchStart);
@@ -176,6 +180,10 @@ export default function Landing() {
       window.removeEventListener("keydown", onKey);
       window.removeEventListener("pointermove", onPointer);
       cueEl?.removeEventListener("click", commit);
+    };
+    return () => {
+      cancelAnimationFrame(raf);
+      detach();
     };
   }, []);
 

@@ -3,10 +3,10 @@
 This guide takes you from a fresh clone to the running app, and then to rebuilding the model data
 yourself. Part 1 is all you need to see the app. Part 2 is only for retraining the model.
 
-- **Part 1 (web app):** about 5 minutes. Needs Node.js only. Uses the stand-in data that ships
+- **Part 1 (web app):** about 5 minutes. Needs Node.js only. Uses the real model output that ships
   with the repo.
-- **Part 2 (ML pipeline):** about 10 minutes. Needs Python and the 138 MB NASA OMNI CSV. Replaces
-  the stand-in data with real model output.
+- **Part 2 (ML pipeline):** about 10 minutes. Needs Python and the 138 MB NASA OMNI CSV. Only for
+  retraining the model; it regenerates the same data from the CSV.
 
 ## Prerequisites
 
@@ -40,7 +40,7 @@ dial-a-storm/
 │   └── data/          Local only, gitignored: raw/ holds the CSV, cache/ holds Parquet + models
 ├── web/               Next.js app
 │   ├── e2e/           Playwright browser tests
-│   └── public/data/   The JSON files the app loads (committed; stand-in "FIXTURE" data)
+│   └── public/data/   The JSON files the app loads (committed; real "PIPELINE" model output)
 └── docs/              CONTRACTS.md (JSON schemas), ENGINEERING.md (rules)
 ```
 
@@ -57,9 +57,10 @@ npm run dev
 Open **http://localhost:3000**.
 
 You should see the Simulator tab: a 3D Sun, solar-wind particles and Earth, a narrative headline
-on the left, the solar-wind dials bottom-right and the SYM-H timeline along the bottom. An orange **FIXTURE DATA** badge next to the title is
-expected. It means the predictions come from a stand-in physics model, not the trained ML model
-(Part 2 replaces them).
+on the left, the storm knob bottom-right and the SYM-H timeline along the bottom. A grey
+**PIPELINE** badge next to the title means the predictions come from the trained Ridge + XGBoost
+model. (An orange **FIXTURE DATA** badge means someone ran `make_fixtures`, which swaps in a
+physics-only stand-in.)
 
 ### Try it
 
@@ -183,12 +184,13 @@ INFO dial_a_storm.model: Gannon observed peak -497.0 nT; predicted {'hybrid': -3
 INFO dial_a_storm.pipeline: pipeline finished in ...s -> .../web/public/data
 ```
 
-Refresh the browser (the dev server can stay running). The badge changes from **FIXTURE DATA** to
-**PIPELINE**, and the hold-out section compares the hybrid model with pure XGBoost.
+Refresh the browser (the dev server can stay running). The badge reads **PIPELINE**, and the
+hold-out section (Model & validation panel) compares the hybrid model with pure XGBoost.
 
-**Git note:** the pipeline overwrites the committed files in `web/public/data/`, so `git status`
-will show them as modified. Only commit them if the team has agreed to switch the shipped data to
-real model output. To undo the change:
+**Git note:** the pipeline overwrites the committed files in `web/public/data/`, which are already
+real pipeline output. On the same CSV, the predictions should match the committed files; the
+`generated_at` timestamps will differ, so `git status` still shows them as modified. Don't commit a
+re-run unless the model or data actually changed. To undo the change:
 
 ```bash
 git checkout -- web/public/data      # run from the repo root
