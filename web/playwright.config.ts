@@ -28,9 +28,12 @@ export default defineConfig({
       },
     },
   ],
-  // Test the production build, on its own port so a running `npm run dev` is not disturbed.
+  // Test the production build on its own port AND in its own build folder (.next-e2e), so a
+  // running `npm run dev` (port 3000, folder .next) is not disturbed. Set via `env` rather than
+  // in the command string so it also works on Windows.
   webServer: {
     command: `npm run build && npx next start -p ${PORT}`,
+    env: { NEXT_DIST_DIR: ".next-e2e" },
     url: `http://localhost:${PORT}`,
     timeout: 240_000,
     reuseExistingServer: false,

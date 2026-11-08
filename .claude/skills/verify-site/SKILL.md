@@ -42,8 +42,11 @@ npm run typecheck
 npm run test:e2e
 ```
 
-This builds the production site, serves it on port 3100 (a running `npm run dev` on 3000 is not
-affected) and drives it in headless Chromium. `web/e2e/site.spec.ts` covers:
+This builds the production site into `web/.next-e2e/` (not `.next`), serves it on port 3100 and
+drives it in headless Chromium. A running `npm run dev` (port 3000, folder `.next`) keeps working
+during the run: the separate folder is set by `NEXT_DIST_DIR` in `playwright.config.ts`. Never run a
+plain `npm run build` while the dev server is up; it overwrites `.next` and the dev server starts
+returning 500 with `MODULE_NOT_FOUND` (fix: stop it, delete `.next`, restart). `web/e2e/site.spec.ts` covers:
 
 - every JSON artifact is served (manifest, storms, 8 windows, 8 scenario grids)
 - the page loads with no console errors or uncaught exceptions into a full-screen, non-scrolling
@@ -79,7 +82,9 @@ and add an `aria-label` to the component if there is nothing stable to select. R
 Tests do not judge looks. For visual changes, take a screenshot and read it:
 
 ```bash
-npx next start -p 3100            # after npm run build; run in the background
+# Reuses the build from step 4 (web/.next-e2e), so a running dev server is not disturbed.
+NEXT_DIST_DIR=.next-e2e npx next start -p 3100     # run in the background
+# Windows PowerShell: $env:NEXT_DIST_DIR=".next-e2e"; npx next start -p 3100
 npx playwright screenshot --viewport-size=1440,900 --wait-for-timeout=5000 http://localhost:3100 <scratchpad>/site.png
 ```
 
