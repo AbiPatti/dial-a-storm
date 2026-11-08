@@ -44,23 +44,53 @@ void main() {
     vCompress = 0.0;
     return;
   }
+
+  // Monotonic flow from Sun to deep space past Earth
   float life = fract(aSeed.x + uPhase * (0.85 + 0.3 * aSeed.w));
   float x = mix(uStartX, uEndX, life);
-  float spread = mix(0.22, 1.0, smoothstep(0.0, 0.55, life));
-  float r = 6.5 * sqrt(aSeed.y) * spread;
+
+  // Solar wind cone expands from Sun surface toward Earth, then gently expands into deep space
+  float spread = mix(0.22, 1.0, smoothstep(0.0, 0.55, life)) + 0.12 * smoothstep(0.55, 1.0, life);
+  float rIn = 6.5 * sqrt(aSeed.y) * spread;
+
+  // Standoff distances matching the 3D magnetopause shell
+  float r0 = magnetopauseRadius(uStandoffRe, 1.0, uEarthR);
+  float rFlank = magnetopauseRadius(uStandoffRe, 0.0, uEarthR);
+  float xShock = -1.4 * r0;
+
+  // Effective obstacle boundary along x:
+  // - Upstream (< xShock): undeflected
+  // - Dayside shock & magnetosheath (xShock <= x < 0): smooth deflection outward around nose & flanks
+  // - Downstream wake (x >= 0): maintains flank deflection and flares gently into deep space
+  //   (physical solar wind does not snap/pinch back to the centerline after passing Earth)
+  float rObs = 0.0;
+  if (x >= xShock && x < 0.0) {
+    float u = (x - xShock) / (-xShock);
+    float s = u * u * (3.0 - 2.0 * u);
+    rObs = 1.04 * rFlank * pow(s, 0.65);
+  } else if (x >= 0.0) {
+    float t = x / max(r0, 0.1);
+    float flare = 1.0 + 0.24 * pow(min(t, 1.2), 0.65) + 0.04 * max(0.0, t - 1.2);
+    rObs = 1.04 * rFlank * flare;
+  }
+
+  // Per-particle boundary jitter so the sheath edge feels soft and natural
+  float rObsPart = rObs * (0.97 + 0.06 * aSeed.w);
+
+  // Physical streamline deflection around the obstacle:
+  // Annular area conservation ensures streamlines never intersect or pinch back
+  float rho = sqrt(rObsPart * rObsPart + rIn * rIn);
+
   float ang = aSeed.z * 6.28318530718;
-  vec3 p = vec3(x, r * sin(ang), r * cos(ang));
+  vec3 p = vec3(x, rho * sin(ang), rho * cos(ang));
 
-  float d = max(length(p), 1e-4);
-  float cosT = -p.x / d;
-  float rmp = magnetopauseRadius(uStandoffRe, cosT, uEarthR);
-  float k = smoothstep(rmp * 1.35, rmp * 0.98, d);
-  float target = max(d, rmp * (1.02 + 0.1 * aSeed.w));
-  p = (p / d) * mix(d, target, k);
+  // Dayside shock heating / compression glow at the bow shock and magnetosheath
+  float compAmount = (rho - rIn) / max(rFlank, 1.0);
+  float dayside = smoothstep(xShock, xShock * 0.7, x) * smoothstep(1.2 * r0, -0.1 * r0, x);
+  vCompress = clamp(compAmount * dayside * 1.5, 0.0, 1.0);
 
-  vCompress = k * smoothstep(-0.2, 0.8, cosT);
   vSpeed = uSpeedNorm;
-  vAlpha = smoothstep(0.0, 0.05, life) * smoothstep(1.0, 0.86, life);
+  vAlpha = smoothstep(0.0, 0.05, life) * smoothstep(1.0, 0.90, life);
 
   vec4 mv = modelViewMatrix * vec4(p, 1.0);
   gl_PointSize = min(uSize * uPixelRatio * (0.7 + aSeed.w) * 30.0 / max(-mv.z, 0.5), 5.0 * uPixelRatio);
