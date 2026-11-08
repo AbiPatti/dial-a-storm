@@ -180,7 +180,7 @@ features, trains the model and exports the scenario grids. It takes about 30 sec
 laptop. The end of the output should include:
 
 ```
-INFO dial_a_storm.model: Gannon observed peak -497.0 nT; predicted {'hybrid': -378.7, 'ridge': -357.7, 'xgb_only': -156.0}
+INFO dial_a_storm.model: Gannon observed peak -497.0 nT; predicted {'hybrid': -272.4, 'ridge': -219.7, 'xgb_only': -160.2}
 INFO dial_a_storm.pipeline: pipeline finished in ...s -> .../web/public/data
 ```
 

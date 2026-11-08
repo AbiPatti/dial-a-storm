@@ -17,7 +17,8 @@ WebGL 2 scene of the Sun, solar wind, magnetosphere and aurora.
 ## Data science rules (non-negotiable)
 
 1. **Zero future leakage.** A feature at time t may only use solar-wind observations at times <= t.
-   Only `.shift(k)` with k >= 0 and trailing `.rolling()` windows are allowed. No centered windows,
+   Only `.shift(k)` with k >= 0, trailing `.rolling()` windows and forward-in-time recursions
+   (the ring-current state in `physics.ring_current`) are allowed. No centered windows,
    no `bfill`, no `shift(-k)`, no interpolation across a gap using the right-hand neighbour.
 2. **Banned inputs.** SYM-H, AE, AL, PCN and >10 MeV proton flux are Earth responses. They must never
    enter the feature matrix. `features.build_features` projects onto `DRIVER_COLUMNS` before any
@@ -27,8 +28,9 @@ WebGL 2 scene of the Sun, solar wind, magnetosphere and aurora.
 4. **Temporal splits:** train 2010–2019, validate 2020–2022, test 2023–2026. The 10–11 May 2024
    Gannon storm is the held-out out-of-sample benchmark and must never be used for fitting,
    early stopping or hyper-parameter selection.
-5. **Hybrid model:** Ridge backbone on integrated coupling sums (extrapolates linearly) + XGBoost on
-   the Ridge residuals. Never ship pure XGBoost as the predictor; it saturates at the training max.
+5. **Hybrid model:** Ridge backbone on the Burton-OBM ring-current state (a leaky, causal integral
+   of coupling that grows with the driver and decays at the physical rate) + XGBoost on the Ridge
+   residuals. Never ship pure XGBoost as the predictor; it saturates at the training max.
 6. **Physics conventions** (all in `pipeline/dial_a_storm/physics.py`, nowhere else):
    - `Bs = max(-Bz, 0)`; scenario Bz multiplier applies only where Bz < 0.
    - `Bt_new = sqrt(max(0, Bt^2 - Bz^2 + Bz_new^2))`.

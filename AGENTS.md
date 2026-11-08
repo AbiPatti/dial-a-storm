@@ -112,7 +112,8 @@ npx playwright test -g "playback"   # one e2e test
 
 - Pipeline change: `.venv/bin/pytest` passes. If you touched modelling, run the full pipeline with
   `--out` to a temporary directory and compare the Gannon line in the log against the known
-  baseline: hybrid -378.7, ridge -357.7, xgb_only -156.0 nT (observed -497).
+  baseline: hybrid -272.4 nT peaking at 03:30 UTC, ridge -219.7, xgb_only -160.2 (observed -497 at
+  02:15).
 - Web change: `npm run typecheck` and `npm run test:e2e` both pass (the e2e run includes a
   production build). New user-visible behaviour gets a test in `web/e2e/`.
 - Follow `.claude/skills/verify-site/SKILL.md` for the full checklist, and report which steps ran.

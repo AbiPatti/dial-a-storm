@@ -63,7 +63,7 @@ Written by `dial_a_storm.model` (PIPELINE) or `dial_a_storm.make_fixtures` (FIXT
 | `model.description` | string | Human-readable summary. |
 | `model.cadence_minutes` | number | `15` |
 | `model.target` | `"sym_h"` | |
-| `model.features` | string[] | Ordered feature columns (62 for the hybrid). |
+| `model.features` | string[] | Ordered feature columns (63 for the hybrid). |
 | `model.banned_inputs` | string[] | `["ae","al","pcn","proton_flux","sym_h"]` |
 | `model.ridge` | object \| null | `null` for fixtures. `{features: string[], coefficients: {name: number}, intercept, alpha, val_rmse_by_alpha: {alpha: rmse}}`. Coefficients are in raw feature units. |
 | `model.xgb` | object \| null | `null` for fixtures. `{best_iteration: int, params: {name: number\|string\|bool\|null}}` |
@@ -191,7 +191,7 @@ which agrees with `in_range` at every node.
 
 For each node, the 5-min drivers from `window_start − 36 h` to `window_end` are scaled, passed
 through `features.build_features` (causal lags of 15 min–12 h, trailing coupling integrals of
-1–24 h, southward-duration counter), and predicted at every 15-min sample of the window. The 36 h
+1–24 h, Burton-OBM ring-current state, southward-duration counter), and predicted at every 15-min sample of the window. The 36 h
 lead-in makes the longest look-back fully defined at sample 0.
 
 ## Validation guarantees (enforced by `web/lib/types.ts`)

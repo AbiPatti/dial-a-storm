@@ -3,6 +3,7 @@
 These tests run on synthetic data (no CSV needed) and assert that:
 * perturbing any driver at times > t leaves every feature at times <= t bit-identical;
 * lag and rolling features reference exactly the intended past samples;
+* the Burton-OBM ring-current feature matches the published model and forgets its start state;
 * Earth-response columns (SYM-H, AE, AL, PCN, proton flux) cannot influence the features;
 * short-gap imputation is causal and bounded at 30 minutes;
 * scenario scaling is point-wise and obeys the physics conventions;
@@ -28,7 +29,7 @@ from dial_a_storm.features import (
     southward_duration_hours,
 )
 from dial_a_storm.load import causal_fill_short_gaps
-from dial_a_storm.physics import coupling, dynamic_pressure, scale_drivers, southward_bz
+from dial_a_storm.physics import coupling, dynamic_pressure, ring_current, scale_drivers, southward_bz
 
 N_DAYS = 4
 
@@ -125,6 +126,40 @@ def test_rolling_integrals_use_trailing_window_only(frame):
                 continue
             want = window.mean() * h
             assert feats.at[t, f"coupling_int_{h}h"] == pytest.approx(want, rel=1e-4, abs=1e-5), (t, h)
+
+
+def test_ring_current_matches_burton_obm_reference(frame):
+    """Independent re-implementation of O'Brien & McPherron (2000), exact exponential step."""
+    import math
+
+    e = coupling(frame["speed"], frame["bz"]).to_numpy(float)
+    dt = config.CADENCE_MIN / 60.0
+    state, want = 0.0, []
+    for x in e:
+        x = 0.0 if np.isnan(x) else x
+        q = -4.4 * (x - 0.49) if x > 0.49 else 0.0
+        tau = 2.4 * math.exp(9.74 / (4.69 + x))
+        state = state * math.exp(-dt / tau) + q * tau * (1 - math.exp(-dt / tau))
+        want.append(state)
+    np.testing.assert_allclose(ring_current(e, dt), want, rtol=1e-12, atol=1e-12)
+    feats = build_features(frame)
+    got = feats["ring_current"].dropna()
+    ref = pd.Series(want, index=frame.index).loc[got.index]
+    np.testing.assert_allclose(got.to_numpy(), ref.to_numpy(np.float32), rtol=1e-5, atol=1e-4)
+
+
+def test_ring_current_forgets_a_truncated_start(frame):
+    """The export starts the integration 36 h before each window. The gap to the full-history state
+    shrinks at least as fast as the slowest (quiet-time) decay, tau(0) = 2.4 exp(9.74 / 4.69) h."""
+    full = build_features(frame)["ring_current"]
+    start = frame.index[200]
+    late = build_features(frame.loc[start:])["ring_current"]
+    tau_max = 2.4 * np.exp(9.74 / 4.69)
+    t0 = late.dropna().index[0]
+    gap0 = abs(full[t0] - late[t0]) + 1e-3
+    t1 = t0 + pd.Timedelta(hours=config.FEATURE_HISTORY_H)
+    gap1 = abs(full[t1] - late[t1])
+    assert gap1 <= gap0 * np.exp(-config.FEATURE_HISTORY_H / tau_max) * 1.01 + 1e-3
 
 
 def test_southward_duration_is_causal_and_capped():

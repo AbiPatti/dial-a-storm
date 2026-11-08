@@ -176,12 +176,12 @@ function Method() {
     {
       k: "01",
       title: "Read the solar wind, never the answer",
-      body: `NASA OMNI 5-minute data, modelled at 15-minute steps. Inputs are only upstream drivers: southward Bz, speed, density, pressure, By, Bt. Every feature at time t uses observations at or before t: lags from 15 min to 12 h, and coupling integrals of v·Bs over 1–24 h. SYM-H, AE, AL, PCN and proton flux are banned from the feature space, and the test suite enforces it.`,
+      body: `NASA OMNI 5-minute data, modelled at 15-minute steps. Inputs are only upstream drivers: southward Bz, speed, density, pressure, By, Bt. Every feature at time t uses observations at or before t: lags from 15 min to 12 h, coupling integrals of v·Bs over 1–24 h, and the Burton–O'Brien–McPherron ring-current state, which builds up with v·Bs and decays at the physical rate. SYM-H, AE, AL, PCN and proton flux are banned from the feature space, and the test suite enforces it.`,
     },
     {
       k: "02",
       title: "A backbone that can extrapolate",
-      body: `A Ridge regression on the integrated coupling sums gives a linear response that keeps deepening as the driver grows. XGBoost then learns only the residual: saturation, pressure and IMF-orientation effects. Trained on ${sp?.train?.start_year ?? "—"}–${sp?.train?.end_year ?? "—"}, tuned on ${sp?.val?.start_year ?? "—"}–${sp?.val?.end_year ?? "—"}, tested on ${sp?.test?.start_year ?? "—"}–${sp?.test?.end_year ?? "—"}.`,
+      body: `A Ridge regression on the physics ring-current state gives a response that deepens as the driver grows and recovers when it stops, so the predicted peak lands on time. XGBoost then learns only the residual: pressure, IMF-orientation and timing effects. Trained on ${sp?.train?.start_year ?? "—"}–${sp?.train?.end_year ?? "—"}, tuned on ${sp?.val?.start_year ?? "—"}–${sp?.val?.end_year ?? "—"}, tested on ${sp?.test?.start_year ?? "—"}–${sp?.test?.end_year ?? "—"}.`,
     },
     {
       k: "03",

@@ -11,6 +11,12 @@ Every feature at time t is a function of solar-wind drivers at times <= t only:
   the value at t - lag is itself a 15-minute sample and the shift is exact.
 * The continuous southward duration is a running count that resets on the first non-southward
   sample, computed with a forward cumulative max (past only).
+* `ring_current` is the Burton / O'Brien-McPherron ring-current state (physics.ring_current),
+  integrated forward in time on the 5-minute grid, so it is causal by construction. A missing
+  sample counts as no driving (the state decays); the feature is NaN unless at least half of the
+  trailing 12 h of coupling was observed. In the scenario export the integration starts at the
+  beginning of the 36 h lead-in (config.FEATURE_HISTORY_H); `tests/test_causality.py` checks that
+  the truncated start has decayed away by the window.
 
 Units: coupling c = v * Bs * 1e-3 in mV/m; integrals in mV/m * h; durations in hours.
 
@@ -25,7 +31,7 @@ import numpy as np
 import pandas as pd
 
 from . import config
-from .physics import coupling, dynamic_pressure, southward_bz
+from .physics import coupling, dynamic_pressure, ring_current, southward_bz
 
 log = logging.getLogger("dial_a_storm.features")
 
@@ -36,15 +42,20 @@ LAG_VARS: tuple[str, ...] = ("bs", "speed", "density", "pdyn", "by", "bt")
 LAG_MINUTES: tuple[int, ...] = (15, 30, 45, 60, 120, 240, 360, 720)
 ROLL_HOURS: tuple[int, ...] = (1, 3, 6, 12, 24)
 SOUTHWARD_CAP_H = 12.0
+RING_COVERAGE_H = 12
 
 ROLL_FEATURES = [f"coupling_int_{h}h" for h in ROLL_HOURS]
 LAG_FEATURES = [f"{v}_lag{m}m" for v in LAG_VARS for m in LAG_MINUTES]
 INSTANT_FEATURES = list(LAG_VARS) + ["coupling", "sqrt_pdyn", "southward_hours"]
-FEATURE_COLUMNS: list[str] = INSTANT_FEATURES + ROLL_FEATURES + LAG_FEATURES
+PHYSICS_FEATURES = ["ring_current"]
+FEATURE_COLUMNS: list[str] = INSTANT_FEATURES + PHYSICS_FEATURES + ROLL_FEATURES + LAG_FEATURES
 
-# Ridge backbone: integrated coupling sums (linear in c, so they extrapolate) plus the Burton
-# pressure-correction term sqrt(Pdyn).
-RIDGE_FEATURES: list[str] = ROLL_FEATURES + ["sqrt_pdyn"]
+# Ridge backbone: the Burton-OBM ring-current state (a leaky integral of coupling: it grows with
+# the driver, so it extrapolates, and it decays at the physical rate, so the predicted storm
+# recovers instead of deepening for as long as a fixed window remembers the driving) plus the
+# Burton pressure-correction term sqrt(Pdyn). Chosen over the flat 1-24 h coupling sums on the
+# 2020-2022 validation split (hybrid RMSE 6.97 vs 7.33 nT); the sums remain XGBoost inputs.
+RIDGE_FEATURES: list[str] = PHYSICS_FEATURES + ["sqrt_pdyn"]
 
 MAX_LOOKBACK_H = max(max(ROLL_HOURS), max(LAG_MINUTES) / 60)
 
@@ -101,6 +112,9 @@ def build_features(sw: pd.DataFrame, subsample: bool = True) -> pd.DataFrame:
     base["coupling"] = coupling(sw["speed"], bz)
     base["sqrt_pdyn"] = np.sqrt(base["pdyn"])
     base["southward_hours"] = southward_duration_hours(bz.to_numpy())
+    ring = pd.Series(ring_current(base["coupling"].to_numpy(), config.CADENCE_MIN / 60.0), index=sw.index)
+    observed = base["coupling"].notna().astype(float).rolling(RING_COVERAGE_H * config.SAMPLES_PER_HOUR, min_periods=1).mean()
+    base["ring_current"] = ring.where(observed >= 0.5)
 
     sph = config.SAMPLES_PER_HOUR
     for h in ROLL_HOURS:

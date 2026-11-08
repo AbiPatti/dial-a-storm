@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "source": "PIPELINE",
-  "generated_at": "2026-11-08T03:35:28Z",
+  "generated_at": "2026-11-08T15:04:41Z",
   "model": {
     "kind": "hybrid_ridge_xgb",
     "description": "Ridge on integrated coupling sums + sqrt(Pdyn), plus XGBoost on the Ridge residuals.",
@@ -17,6 +17,7 @@
       "coupling",
       "sqrt_pdyn",
       "southward_hours",
+      "ring_current",
       "coupling_int_1h",
       "coupling_int_3h",
       "coupling_int_6h",
@@ -80,34 +81,26 @@
     ],
     "ridge": {
       "features": [
-        "coupling_int_1h",
-        "coupling_int_3h",
-        "coupling_int_6h",
-        "coupling_int_12h",
-        "coupling_int_24h",
+        "ring_current",
         "sqrt_pdyn"
       ],
       "coefficients": {
-        "coupling_int_1h": 0.067233,
-        "coupling_int_3h": -1.693199,
-        "coupling_int_6h": -0.49844,
-        "coupling_int_12h": -0.367294,
-        "coupling_int_24h": -0.597166,
-        "sqrt_pdyn": 8.722066
+        "ring_current": 0.821215,
+        "sqrt_pdyn": 9.894691
       },
-      "intercept": -7.742335,
-      "alpha": 0.01,
+      "intercept": -7.911201,
+      "alpha": 1000.0,
       "val_rmse_by_alpha": {
-        "0.01": 8.1803,
-        "0.1": 8.1803,
-        "1.0": 8.1803,
-        "10.0": 8.1803,
-        "100.0": 8.1804,
-        "1000.0": 8.1811
+        "0.01": 7.6395,
+        "0.1": 7.6395,
+        "1.0": 7.6395,
+        "10.0": 7.6395,
+        "100.0": 7.6389,
+        "1000.0": 7.6336
       }
     },
     "xgb": {
-      "best_iteration": 156,
+      "best_iteration": 207,
       "params": {
         "n_estimators": 3000,
         "learning_rate": 0.03,
@@ -122,7 +115,7 @@
         "random_state": 42
       }
     },
-    "train_seconds": 10.4
+    "train_seconds": 10.3
   },
   "splits": {
     "train": {
@@ -144,118 +137,118 @@
   "metrics": {
     "train": {
       "hybrid": {
-        "n": 332961,
-        "rmse": 7.241,
-        "mae": 5.492,
-        "r2": 0.7889,
+        "n": 337418,
+        "rmse": 6.697,
+        "mae": 5.112,
+        "r2": 0.8187,
         "bias": 0.001,
-        "storm_n": 7043,
-        "storm_rmse": 13.355
+        "storm_n": 7105,
+        "storm_rmse": 11.523
       },
       "ridge": {
-        "n": 332961,
-        "rmse": 9.5,
-        "mae": 6.932,
-        "r2": 0.6368,
-        "bias": -0.0,
-        "storm_n": 7043,
-        "storm_rmse": 28.536
+        "n": 337418,
+        "rmse": 8.573,
+        "mae": 6.284,
+        "r2": 0.703,
+        "bias": 0.0,
+        "storm_n": 7105,
+        "storm_rmse": 24.222
       },
       "xgb_only": {
-        "n": 332961,
-        "rmse": 7.584,
-        "mae": 5.71,
-        "r2": 0.7685,
-        "bias": 0.006,
-        "storm_n": 7043,
-        "storm_rmse": 16.966
+        "n": 337418,
+        "rmse": 7.172,
+        "mae": 5.413,
+        "r2": 0.7921,
+        "bias": 0.001,
+        "storm_n": 7105,
+        "storm_rmse": 15.378
       }
     },
     "val": {
       "hybrid": {
-        "n": 100878,
-        "rmse": 7.332,
-        "mae": 5.466,
-        "r2": 0.7009,
-        "bias": -0.862,
-        "storm_n": 1264,
-        "storm_rmse": 17.921
+        "n": 101999,
+        "rmse": 6.974,
+        "mae": 5.219,
+        "r2": 0.7277,
+        "bias": -1.029,
+        "storm_n": 1266,
+        "storm_rmse": 18.016
       },
       "ridge": {
-        "n": 100878,
-        "rmse": 8.18,
-        "mae": 6.165,
-        "r2": 0.6277,
-        "bias": -1.237,
-        "storm_n": 1264,
-        "storm_rmse": 21.773
+        "n": 101999,
+        "rmse": 7.634,
+        "mae": 5.718,
+        "r2": 0.6738,
+        "bias": -1.259,
+        "storm_n": 1266,
+        "storm_rmse": 19.903
       },
       "xgb_only": {
-        "n": 100878,
-        "rmse": 7.385,
-        "mae": 5.491,
-        "r2": 0.6966,
-        "bias": -0.885,
-        "storm_n": 1264,
-        "storm_rmse": 20.108
+        "n": 101999,
+        "rmse": 7.058,
+        "mae": 5.244,
+        "r2": 0.7211,
+        "bias": -0.993,
+        "storm_n": 1266,
+        "storm_rmse": 19.85
       }
     },
     "test": {
       "hybrid": {
-        "n": 120884,
-        "rmse": 12.252,
-        "mae": 8.641,
-        "r2": 0.7658,
-        "bias": 1.057,
-        "storm_n": 8422,
-        "storm_rmse": 29.167
+        "n": 122675,
+        "rmse": 11.488,
+        "mae": 8.064,
+        "r2": 0.7929,
+        "bias": 0.258,
+        "storm_n": 8473,
+        "storm_rmse": 27.496
       },
       "ridge": {
-        "n": 120884,
-        "rmse": 14.106,
-        "mae": 9.798,
-        "r2": 0.6895,
-        "bias": 2.213,
-        "storm_n": 8422,
-        "storm_rmse": 35.868
+        "n": 122675,
+        "rmse": 13.437,
+        "mae": 8.956,
+        "r2": 0.7168,
+        "bias": 0.161,
+        "storm_n": 8473,
+        "storm_rmse": 36.107
       },
       "xgb_only": {
-        "n": 120884,
-        "rmse": 14.006,
-        "mae": 9.117,
-        "r2": 0.6939,
-        "bias": 1.857,
-        "storm_n": 8422,
-        "storm_rmse": 38.44
+        "n": 122675,
+        "rmse": 13.074,
+        "mae": 8.479,
+        "r2": 0.7318,
+        "bias": 0.934,
+        "storm_n": 8473,
+        "storm_rmse": 35.91
       }
     },
     "test_excl_holdout": {
       "hybrid": {
-        "n": 120370,
-        "rmse": 11.829,
-        "mae": 8.489,
-        "r2": 0.7484,
-        "bias": 0.937,
-        "storm_n": 8041,
-        "storm_rmse": 27.273
+        "n": 122159,
+        "rmse": 10.931,
+        "mae": 7.915,
+        "r2": 0.7842,
+        "bias": 0.081,
+        "storm_n": 8092,
+        "storm_rmse": 24.628
       },
       "ridge": {
-        "n": 120370,
-        "rmse": 13.58,
-        "mae": 9.614,
-        "r2": 0.6684,
-        "bias": 2.043,
-        "storm_n": 8041,
-        "storm_rmse": 33.735
+        "n": 122159,
+        "rmse": 12.56,
+        "mae": 8.754,
+        "r2": 0.7152,
+        "bias": -0.072,
+        "storm_n": 8092,
+        "storm_rmse": 32.015
       },
       "xgb_only": {
-        "n": 120370,
-        "rmse": 12.746,
-        "mae": 8.862,
-        "r2": 0.7079,
-        "bias": 1.581,
-        "storm_n": 8041,
-        "storm_rmse": 32.338
+        "n": 122159,
+        "rmse": 11.878,
+        "mae": 8.259,
+        "r2": 0.7453,
+        "bias": 0.689,
+        "storm_n": 8092,
+        "storm_rmse": 30.024
       }
     }
   },
@@ -267,42 +260,42 @@
     "observed_peak_nT": -497.0,
     "observed_peak_time": "2024-05-11T02:15:00Z",
     "predicted_peak_nT": {
-      "hybrid": -378.7,
-      "ridge": -357.7,
-      "xgb_only": -156.0
+      "hybrid": -272.4,
+      "ridge": -219.7,
+      "xgb_only": -160.2
     },
     "predicted_peak_time": {
-      "hybrid": "2024-05-11T15:00:00Z",
-      "ridge": "2024-05-11T15:15:00Z",
-      "xgb_only": "2024-05-11T13:30:00Z"
+      "hybrid": "2024-05-11T03:30:00Z",
+      "ridge": "2024-05-11T04:00:00Z",
+      "xgb_only": "2024-05-11T15:00:00Z"
     },
     "metrics": {
       "hybrid": {
-        "n": 514,
-        "rmse": 50.312,
-        "mae": 44.256,
-        "r2": 0.7666,
-        "bias": 29.365,
+        "n": 516,
+        "rmse": 55.552,
+        "mae": 43.421,
+        "r2": 0.716,
+        "bias": 42.018,
         "storm_n": 381,
-        "storm_rmse": 55.739
+        "storm_rmse": 62.702
       },
       "ridge": {
-        "n": 514,
-        "rmse": 60.075,
-        "mae": 52.79,
-        "r2": 0.6673,
-        "bias": 42.102,
+        "n": 516,
+        "rmse": 74.681,
+        "mae": 56.767,
+        "r2": 0.4868,
+        "bias": 55.35,
         "storm_n": 381,
-        "storm_rmse": 66.476
+        "storm_rmse": 84.993
       },
       "xgb_only": {
-        "n": 514,
-        "rmse": 89.938,
-        "mae": 68.8,
-        "r2": 0.2543,
-        "bias": 66.638,
+        "n": 516,
+        "rmse": 85.087,
+        "mae": 60.602,
+        "r2": 0.3338,
+        "bias": 58.869,
         "storm_n": 381,
-        "storm_rmse": 102.921
+        "storm_rmse": 97.628
       }
     }
   },

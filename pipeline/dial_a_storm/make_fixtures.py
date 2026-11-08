@@ -21,7 +21,6 @@ from __future__ import annotations
 
 import json
 import logging
-import math
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -33,7 +32,7 @@ from .export_grid import export_all
 from .features import model_grid_mask
 from .load import load_cached
 from .model import metrics, train_max_coupling
-from .physics import coupling, dynamic_pressure
+from .physics import burton_dst, coupling, dynamic_pressure, ring_current
 from .storms import build_records, storms_document, write_json
 
 log = logging.getLogger("dial_a_storm.fixtures")
@@ -44,16 +43,7 @@ def burton(speed: np.ndarray, bz: np.ndarray, density: np.ndarray) -> np.ndarray
     """Integrate the Burton-OBM model on gap-free 5-min arrays. Returns Dst (nT)."""
     vbs = np.asarray(coupling(speed, bz), dtype=float)
     sqrt_p = np.sqrt(np.asarray(dynamic_pressure(density, speed), dtype=float))
-    out = np.empty(vbs.size)
-    dst_star = 0.0
-    for k in range(vbs.size):
-        e = vbs[k]
-        q = -4.4 * (e - 0.49) if e > 0.49 else 0.0
-        tau = 2.4 * math.exp(9.74 / (4.69 + e))
-        decay = math.exp(-DT_H / tau)
-        dst_star = dst_star * decay + q * tau * (1.0 - decay)
-        out[k] = dst_star + 7.26 * sqrt_p[k] - 11.0
-    return out
+    return burton_dst(ring_current(vbs, DT_H), sqrt_p)
 
 
 def burton_predictor(drivers: pd.DataFrame, idx: pd.DatetimeIndex, baseline: bool) -> dict[str, np.ndarray]:

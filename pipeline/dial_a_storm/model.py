@@ -2,8 +2,9 @@
 
 Why hybrid: tree ensembles predict piecewise-constant values bounded by the training targets, so a
 pure XGBoost model trained on 2010-2019 (deepest storm about -234 nT) cannot predict a -497 nT
-storm. The Ridge backbone is linear in the integrated coupling sums, so a stronger driver gives a
-proportionally deeper prediction. XGBoost then models the bounded, non-linear residual structure
+storm. The Ridge backbone is linear in the Burton-OBM ring-current state (a leaky integral of the
+coupling v*Bs that decays at the physical rate), so a stronger driver gives a deeper prediction and
+the predicted storm recovers on time. XGBoost then models the bounded, non-linear residual structure
 (pressure effects, IMF orientation, saturation).
 
 Splits: train 2010-2019, validate 2020-2022 (Ridge alpha selection, XGBoost early stopping), test
@@ -267,7 +268,7 @@ def train(out_dir: Path | None = None) -> dict:
         "generated_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "model": {
             "kind": "hybrid_ridge_xgb",
-            "description": "Ridge on integrated coupling sums + sqrt(Pdyn), plus XGBoost on the Ridge residuals.",
+            "description": "Ridge on the Burton-OBM ring-current state + sqrt(Pdyn), plus XGBoost on the Ridge residuals.",
             "cadence_minutes": config.MODEL_CADENCE_MIN,
             "target": "sym_h",
             "features": FEATURE_COLUMNS,
