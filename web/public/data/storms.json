@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "source": "FIXTURE",
-  "generated_at": "2026-11-07T20:01:48Z",
+  "source": "PIPELINE",
+  "generated_at": "2026-11-08T03:35:15Z",
   "threshold_nT": -50.0,
   "merge_gap_hours": 3.0,
   "window_pad_hours": 24,
