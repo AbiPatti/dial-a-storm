@@ -17,8 +17,10 @@ export type LoadStatus = "idle" | "loading" | "ready" | "error";
 export type SceneObject = "sun" | "earth" | "magnetopause" | "aurora";
 /** Camera presets the rig can fly to. */
 export type ViewId = "overview" | SceneObject;
+/** Landing page: title screen, scroll transition into the scene, then the app. */
+export type LandingPhase = "landing" | "entering" | "entered";
 /** Popovers and dialogs (only one open at a time). */
-export type PanelId = "storms" | "help";
+export type PanelId = "storms" | "help" | "tune";
 /** Top-level tabs: the interactive simulator, or the long-form explainer. */
 export type TabId = "simulator" | "explainer";
 
@@ -66,10 +68,13 @@ export interface DialState {
   labels: boolean;
   panel: PanelId | null;
   tab: TabId;
+  landing: LandingPhase;
 
   init: () => Promise<void>;
   selectStorm: (id: string) => Promise<void>;
   setParam: (key: keyof Params, value: number) => void;
+  /** One-knob control: scales southward Bz, speed and density together (see intensityParams). */
+  setIntensity: (k: number) => void;
   resetParams: () => void;
   simulate: () => void;
   play: () => void;
@@ -84,11 +89,27 @@ export interface DialState {
   toggleLabels: () => void;
   openPanel: (p: PanelId | null) => void;
   setTab: (t: TabId) => void;
+  setLanding: (p: LandingPhase) => void;
   /** Move to the previous (-1) or next (+1) storm in the catalogue. */
   stepStorm: (dir: 1 | -1) => void;
 }
 
 const msOf = (iso: string) => Date.parse(iso);
+
+/**
+ * The storm dial's single "intensity" k (×0.5 .. ×3) mapped onto the three drivers. Southward Bz
+ * carries the full factor because it is what opens the shield; speed and density follow more
+ * gently. k = 1 is the storm as it happened.
+ */
+export function intensityParams(k: number): Params {
+  return { bz: k, speed: 1 + (k - 1) * 0.25, density: 1 + (k - 1) * 0.5 };
+}
+
+/** True when the three drivers sit exactly on the dial's curve (not fine-tuned by hand). */
+export function onIntensityCurve(p: Params): boolean {
+  const q = intensityParams(p.bz);
+  return Math.abs(q.speed - p.speed) < 0.011 && Math.abs(q.density - p.density) < 0.011;
+}
 
 function buildBundle(window: StormWindow, grid: PreparedGrid): StormBundle {
   const t0Ms = msOf(window.t0);
@@ -149,6 +170,7 @@ export const useDialStore = create<DialState>()((set, get) => ({
   labels: true,
   panel: null,
   tab: "simulator",
+  landing: "landing",
 
   init: async () => {
     if (get().status === "loading" || get().status === "ready") return;
@@ -198,6 +220,16 @@ export const useDialStore = create<DialState>()((set, get) => ({
       return;
     }
     set({ params: next, ...computeScenario(bundle.grid, next) });
+  },
+
+  setIntensity: (k) => {
+    const { bundle } = get();
+    const raw = intensityParams(k);
+    const axes = bundle?.grid.axes;
+    const next: Params = axes
+      ? { bz: clampToAxis(axes.bz, raw.bz), speed: clampToAxis(axes.speed, raw.speed), density: clampToAxis(axes.density, raw.density) }
+      : raw;
+    set(bundle ? { params: next, ...computeScenario(bundle.grid, next) } : { params: next });
   },
 
   resetParams: () => {
@@ -250,6 +282,9 @@ export const useDialStore = create<DialState>()((set, get) => ({
     if (get().tab === t) return;
     // The scene stops rendering behind the explainer, so stop the replay too.
     set(t === "explainer" ? { tab: t, playing: false, panel: null } : { tab: t });
+  },
+  setLanding: (p) => {
+    if (get().landing !== p) set({ landing: p });
   },
   stepStorm: (dir) => {
     const { storms, activeStormId } = get();

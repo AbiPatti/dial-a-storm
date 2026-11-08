@@ -16,8 +16,10 @@ import { useDialStore } from "@/lib/store";
  *   (34 + 1.5 j) / 40, j = 0..7, so `PHASE_WRAP * factor` is always an integer and wrapping the
  *   phase never makes particles jump.
  * - Density controls the visible fraction of particles and their brightness.
- * - Particles are deflected around the magnetopause r(theta) = r0 (2 / (1 + cos theta))^0.6,
- *   r0 from Shue et al. (1998), mapped to scene units exactly like the Magnetopause shell.
+ * - Streamlines bend around the magnetopause (Shue et al. 1998 stand-off, the same shape as the
+ *   Magnetopause shell): undeflected upstream of the bow shock, pushed out through the sheath, and
+ *   kept outside the flank downstream. rho = sqrt(rObs^2 + rIn^2) conserves annular area, so
+ *   streamlines never cross and never pinch back to the Sun–Earth line behind Earth.
  * - Each point is drawn as a streak along its screen-space direction of travel; faster wind gives
  *   longer streaks.
  * - Southward IMF (Bz < 0) opens the dayside magnetopause by magnetic reconnection. A fraction of
@@ -51,17 +53,40 @@ varying vec2 vDir;
 varying float vStretch;
 ${MAGNETOPAUSE_GLSL}
 
-vec3 flowPos(float life, float r, float ang) {
+// Effective obstacle radius at x: zero upstream of the shock, rising through the sheath, then
+// held at the flank and flaring gently downstream.
+float obstacle(float x) {
+  float r0 = magnetopauseRadius(uStandoffRe, 1.0, uEarthR);
+  float rFlank = magnetopauseRadius(uStandoffRe, 0.0, uEarthR);
+  float xShock = -1.4 * r0;
+  if (x < xShock) return 0.0;
+  if (x < 0.0) {
+    float u = (x - xShock) / (-xShock);
+    float s = u * u * (3.0 - 2.0 * u);
+    return 1.04 * rFlank * pow(s, 0.65);
+  }
+  float t = x / max(r0, 0.1);
+  return 1.04 * rFlank * (1.0 + 0.24 * pow(min(t, 1.2), 0.65) + 0.04 * max(0.0, t - 1.2));
+}
+
+// Position along a streamline; jitter softens the sheath edge per particle.
+vec3 flowPos(float life, float r, float ang, float jitter) {
   float x = mix(uStartX, uEndX, life);
-  float spread = mix(0.22, 1.0, smoothstep(0.0, 0.55, life));
-  float rr = r * spread;
-  vec3 p = vec3(x, rr * sin(ang), rr * cos(ang));
-  float d = max(length(p), 1e-4);
-  float cosT = -p.x / d;
-  float rmp = magnetopauseRadius(uStandoffRe, cosT, uEarthR);
-  float k = smoothstep(rmp * 1.35, rmp * 0.98, d);
-  float target = max(d, rmp * (1.02 + 0.1 * fract(r * 7.13)));
-  return (p / d) * mix(d, target, k);
+  float spread = mix(0.22, 1.0, smoothstep(0.0, 0.55, life)) + 0.12 * smoothstep(0.55, 1.0, life);
+  float rIn = r * spread;
+  float rObs = obstacle(x) * (0.97 + 0.06 * jitter);
+  float rho = sqrt(rObs * rObs + rIn * rIn);
+  return vec3(x, rho * sin(ang), rho * cos(ang));
+}
+
+// Shock heating / compression glow in the dayside sheath.
+float compression(vec3 p, float rIn) {
+  float r0 = magnetopauseRadius(uStandoffRe, 1.0, uEarthR);
+  float rFlank = magnetopauseRadius(uStandoffRe, 0.0, uEarthR);
+  float xShock = -1.4 * r0;
+  float rho = length(p.yz);
+  float dayside = smoothstep(xShock, xShock * 0.7, p.x) * smoothstep(1.2 * r0, -0.1 * r0, p.x);
+  return clamp((rho - rIn) / max(rFlank, 1.0) * dayside * 1.5, 0.0, 1.0);
 }
 
 vec3 bezier(vec3 a, vec3 b, vec3 c, float t) {
@@ -86,15 +111,13 @@ void main() {
   float r = 6.5 * sqrt(aSeed.y);
   float ang = aSeed.z * 6.28318530718;
 
-  vec3 p = flowPos(life, r, ang);
-  vec3 pAhead = flowPos(min(life + 0.004, 1.0), r, ang);
+  vec3 p = flowPos(life, r, ang, aSeed.w);
+  vec3 pAhead = flowPos(min(life + 0.004, 1.0), r, ang, aSeed.w);
 
-  float d = max(length(p), 1e-4);
-  float cosT = -p.x / d;
-  float rmp = magnetopauseRadius(uStandoffRe, cosT, uEarthR);
-  vCompress = smoothstep(rmp * 1.35, rmp * 0.98, d) * smoothstep(-0.2, 0.8, cosT);
+  float spreadNow = mix(0.22, 1.0, smoothstep(0.0, 0.55, life)) + 0.12 * smoothstep(0.55, 1.0, life);
+  vCompress = compression(p, r * spreadNow);
   vSpeed = uSpeedNorm;
-  vAlpha = smoothstep(0.0, 0.05, life) * smoothstep(1.0, 0.86, life);
+  vAlpha = smoothstep(0.0, 0.05, life) * smoothstep(1.0, 0.90, life);
 
   // Reconnection capture: near-axis particles, a coupling-controlled fraction of them.
   float rNose = magnetopauseRadius(uStandoffRe, 1.0, uEarthR);
@@ -104,7 +127,7 @@ void main() {
   float picked = step(fract(aSeed.y * 13.7 + aSeed.z * 5.3), uCapture) * nearAxis;
   if (picked > 0.5 && life > lifeNose) {
     float t = clamp((life - lifeNose) / 0.07, 0.0, 1.0);
-    vec3 p0 = flowPos(lifeNose, r, ang);
+    vec3 p0 = flowPos(lifeNose, r, ang, aSeed.w);
     vec3 cusp = sin(ang) >= 0.0 ? uCuspN : uCuspS;
     vec3 ctrl = vec3(-rNose * 0.55, cusp.y * 2.4, p0.z * 0.4);
     p = bezier(p0, ctrl, cusp, t);

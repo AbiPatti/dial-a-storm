@@ -4,7 +4,8 @@ const PORT = 3100;
 
 export default defineConfig({
   testDir: "./e2e",
-  // Headless runs render the 3D scene in software WebGL, which is CPU-heavy: allow time and limit workers.
+  // Software WebGL (SwiftShader) renders the scene and landing shader on the CPU, and tests run in
+  // parallel; a few interaction tests need more than 30 s under that load.
   timeout: 60_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,

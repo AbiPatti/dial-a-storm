@@ -4,6 +4,7 @@ import { GEO_RE } from "@/lib/glsl";
 import { formatUtc, liveFrame, type LiveFrame } from "@/lib/live";
 import { phaseAt } from "@/lib/phases";
 import { useDialStore } from "@/lib/store";
+import HistoryRuler from "./HistoryRuler";
 
 /**
  * The one piece of text that explains the scene. It rewrites itself from the live state, so during
@@ -58,7 +59,7 @@ export default function Headline() {
   const phase = bundle && trace && tracePeak ? phaseAt(bundle, bundle.events, trace, tracePeak.index, cursor) : null;
 
   return (
-    <section aria-label="What is happening" className="pointer-events-none max-w-md">
+    <section aria-label="What is happening" className="pointer-events-none -ml-3 max-w-md rounded-2xl bg-ink/60 p-3 backdrop-blur-[3px] sm:-ml-4 sm:p-4">
       <p className="micro">
         {f.ready ? formatUtc(f.timeMs, true) : "—"}
         {name ? ` · ${name}` : ""}
@@ -88,6 +89,13 @@ export default function Headline() {
           </div>
         </div>
       </div>
+
+      {/* Hidden on phones, where the timeline and knob need the room. */}
+      {f.ready && (
+        <div className="hidden sm:block">
+          <HistoryRuler live={f.symH} peak={tracePeak?.value ?? null} color={f.tier.color} observedPeak={bundle?.observedMin ?? null} />
+        </div>
+      )}
     </section>
   );
 }

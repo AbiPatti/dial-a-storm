@@ -51,11 +51,17 @@ affected) and drives it in headless Chromium. `web/e2e/site.spec.ts` covers:
 - each of the 8 storms can be selected from the catalogue popover, and `[` / `]` step storms
 - the Explainer tab shows the physics chain, "How it works", the hold-out test and the 8-storm catalogue; E and the tab arrows switch tabs
 - the headline narrates the storm and names its phase (shock, main phase, peak, recovery)
-- the Bz / speed / density dials change the prediction, the BEYOND TRAINING DATA warning is absent
-  for weak driving and appears at extreme settings, Max and Reset (button and `R`) work
+- the storm knob drives the storm: the headline value, the history ruler and verdict, and the
+  "What it does to us" consequences card follow it, and the compact BEYOND TRAINING DATA advisory
+  appears under the knob at high settings
+- Fine-tune (button and `T`) opens the Bz / speed / density sliders; they change the prediction,
+  the BEYOND TRAINING DATA warning is absent for weak driving and appears at extreme settings,
+  Max and Reset (button and `R`) work
 - playback: Play, Pause, scrub, arrow-key stepping, Home, replay speed, Simulate and Space
 - scene interaction: selecting Earth / magnetopause / solar wind / aurora opens their detail card,
   Esc and Close dismiss it, and the Labels toggle hides and restores the labels
+- the landing page: scrolling dives into the storm and reveals the app (skipped on reload in the
+  same tab session), and a small scroll springs back to the title
 - the guide opens on a first visit, its superstorm demo runs, and it stays closed after reload
 
 First run on a new machine: `npx playwright install chromium`.

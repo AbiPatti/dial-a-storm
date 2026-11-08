@@ -4,6 +4,7 @@ import { Stars } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { Bloom, EffectComposer } from "@react-three/postprocessing";
 import { useState } from "react";
+import { useDialStore } from "@/lib/store";
 import AuroraRing from "./AuroraRing";
 import CameraRig from "./CameraRig";
 import Earth from "./Earth";
@@ -29,12 +30,15 @@ import Sun from "./Sun";
  */
 export default function SpaceCanvas({ active = true }: { active?: boolean }) {
   const [glError, setGlError] = useState<string | null>(null);
+  // While the landing page covers the scene, render once (warms shaders) and then idle.
+  const covered = useDialStore((s) => s.landing === "landing");
 
   return (
     <div className="fixed inset-0 z-0 bg-ink" role="region" aria-label="3D scene: Sun, solar wind, Earth and magnetosphere">
       <Canvas
         dpr={[1, 1.5]}
-        frameloop={active ? "always" : "never"}
+        // Idle behind the landing page (render on demand) and stop entirely behind the Explainer tab.
+        frameloop={!active ? "never" : covered ? "demand" : "always"}
         flat
         gl={{ antialias: true, alpha: false, powerPreference: "high-performance", stencil: false }}
         camera={{ position: [26, 15, 44], fov: 45, near: 0.1, far: 600 }}

@@ -37,26 +37,28 @@ export const RestartIcon = () => (
   </Icon>
 );
 export const FitIcon = () => (
-  <Icon>
-    <path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10" />
+  <Icon width={17} height={17} strokeWidth={1.35}>
+    <path d="M2.5 5.5v-2a1 1 0 0 1 1-1h2M10.5 2.5h2a1 1 0 0 1 1 1v2M13.5 10.5v2a1 1 0 0 1-1 1h-2M5.5 13.5h-2a1 1 0 0 1-1-1v-2" />
     <circle cx="8" cy="8" r="1.6" />
   </Icon>
 );
 export const LabelIcon = () => (
-  <Icon>
-    <path d="M2.5 4.5h7l4 3.5-4 3.5h-7z" />
+  <Icon width={17} height={17} strokeWidth={1.35}>
+    <path d="M2.75 3.5v3.7c0 .27.1.52.3.7l5.3 5.3a1 1 0 0 0 1.4 0l3.4-3.4a1 1 0 0 0 0-1.4L7.85 3.1a1 1 0 0 0-.7-.3H3.45a.7.7 0 0 0-.7.7z" />
+    <circle cx="5.6" cy="5.6" r=".85" fill="currentColor" stroke="none" />
   </Icon>
 );
 export const ChartIcon = () => (
-  <Icon>
-    <path d="M2.5 13.5h11M4 11l3-4 2.5 2.5L13 4.5" />
+  <Icon width={17} height={17} strokeWidth={1.35}>
+    <path d="M2.5 13.5h11" />
+    <path d="M4.75 11V8.5M8 11V5.5M11.25 11V3" strokeWidth={1.7} />
   </Icon>
 );
 export const HelpIcon = () => (
-  <Icon>
-    <circle cx="8" cy="8" r="5.8" />
-    <path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1v.3" />
-    <circle cx="8" cy="11.4" r=".5" fill="currentColor" />
+  <Icon width={17} height={17} strokeWidth={1.35}>
+    <circle cx="8" cy="8" r="5.75" />
+    <path d="M6.4 6.4a1.65 1.65 0 1 1 2.25 1.55c-.4.17-.65.55-.65 1v.3" />
+    <circle cx="8" cy="11.1" r=".55" fill="currentColor" stroke="none" />
   </Icon>
 );
 export const CloseIcon = () => (

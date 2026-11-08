@@ -11,7 +11,8 @@ export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ["[", "]"], label: "Previous / next storm" },
   { keys: ["0"], label: "Fit the whole scene" },
   { keys: ["1", "2", "3", "4"], label: "Fly to Sun / Earth / magnetopause / aurora" },
-  { keys: ["R"], label: "Reset the dials to history (1×)" },
+  { keys: ["R"], label: "Reset the knob to history (1×)" },
+  { keys: ["T"], label: "Fine-tune the solar wind" },
   { keys: ["L"], label: "Show / hide labels" },
   { keys: ["E"], label: "Switch between Simulator and Explainer" },
   { keys: ["?"], label: "Help" },
@@ -29,6 +30,7 @@ export function useShortcuts(): void {
       const tag = el?.tagName;
       const inField = tag === "INPUT" || tag === "SELECT" || tag === "TEXTAREA" || el?.isContentEditable;
       const s = useDialStore.getState();
+      if (s.landing !== "entered") return;
 
       if (e.key === "Escape") {
         if (s.panel) s.openPanel(null);
@@ -74,6 +76,10 @@ export function useShortcuts(): void {
         case "r":
         case "R":
           s.resetParams();
+          return;
+        case "t":
+        case "T":
+          s.openPanel(s.panel === "tune" ? null : "tune");
           return;
         case "l":
         case "L":

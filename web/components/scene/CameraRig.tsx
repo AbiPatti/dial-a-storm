@@ -12,7 +12,7 @@ import { useDialStore, type ViewId } from "@/lib/store";
  * Orbit camera with eased fly-to presets.
  *
  * - Drag to orbit, scroll / pinch to zoom (clamped), double-click an object to fly to it.
- * - On first load the camera glides in from deep space to the overview.
+ * - The camera glides in from deep space to the overview as the landing page dissolves.
  * - Any user drag cancels an in-flight transition, so the rig never fights the hand.
  * - With prefers-reduced-motion the camera jumps instead of flying.
  */
@@ -20,7 +20,7 @@ import { useDialStore, type ViewId } from "@/lib/store";
 type V3 = [number, number, number];
 export const VIEWS: Record<ViewId, { position: V3; target: V3 }> = {
   // Aimed slightly above the Sun–Earth line so both sit below the narrative headline (top-left).
-  overview: { position: [11, 12.5, 31], target: [-8.5, 2.2, 0] },
+  overview: { position: [11, 13.5, 31], target: [-8.5, 3.2, 0] },
   sun: { position: [-12, 4.5, 21], target: [-30, 0, 0] },
   earth: { position: [4.6, 1.6, 8.2], target: [0, -0.7, 0] },
   magnetopause: { position: [4, 15, 22], target: [-1.5, -1, 0] },
@@ -72,10 +72,11 @@ export default function CameraRig() {
       introDone = true;
       go("overview");
     };
-    if (useDialStore.getState().status === "ready") intro();
+    const ready = (s: { status: string; landing: string }) => s.status === "ready" && s.landing !== "landing";
+    if (ready(useDialStore.getState())) intro();
     const unsub = useDialStore.subscribe((s, prev) => {
       if (s.focus.nonce !== prev.focus.nonce) go(s.focus.view);
-      if (s.status === "ready" && prev.status !== "ready") intro();
+      if (ready(s) && !ready(prev)) intro();
     });
     return () => {
       unsub();

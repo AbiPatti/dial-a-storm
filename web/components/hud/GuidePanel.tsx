@@ -26,8 +26,8 @@ function markSeen() {
 }
 
 /**
- * The demo centrepiece: the 2024 Gannon storm (never seen in training) with every dial at the top
- * of its precomputed grid, replayed from the start with the magnetopause in focus.
+ * The demo centrepiece: the 2024 Gannon storm (never seen in training) with the storm knob at
+ * ×3, replayed from the start with the magnetopause in focus.
  */
 async function runSuperstormDemo() {
   const s = useDialStore.getState();
@@ -38,9 +38,7 @@ async function runSuperstormDemo() {
   const st = useDialStore.getState();
   const axes = st.bundle?.grid.axes;
   if (!axes) return;
-  st.setParam("bz", axes.bz[axes.bz.length - 1]);
-  st.setParam("speed", axes.speed[axes.speed.length - 1]);
-  st.setParam("density", axes.density[axes.density.length - 1]);
+  st.setIntensity(axes.bz[axes.bz.length - 1]);
   st.select("magnetopause");
   st.focusOn("magnetopause");
   st.simulate();
@@ -77,7 +75,7 @@ export default function GuidePanel() {
       title: "What if the Sun hit harder?",
       body: (
         <>
-          The dials rescale the real solar wind.{" "}
+          The knob (bottom right) turns up the real solar wind; <i>Fine-tune</i> opens the three drivers separately.{" "}
           {fixture
             ? "A physics model (FIXTURE stand-in until the ML pipeline runs) predicts how hard the storm hits Earth (SYM-H)."
             : "A machine-learning model trained on 2010–2019 predicts how hard the storm hits Earth (SYM-H)."}{" "}
@@ -164,7 +162,7 @@ export default function GuidePanel() {
                   type="button"
                   className="rounded-full bg-plasma-300 px-3 py-1 text-[12px] font-semibold text-void transition hover:bg-white"
                   onClick={() => void runSuperstormDemo()}
-                  title={`${holdoutName}, every dial at its maximum, replayed from the start`}
+                  title={`${holdoutName}, storm knob at ×3, replayed from the start`}
                 >
                   Try the superstorm what-if
                 </button>

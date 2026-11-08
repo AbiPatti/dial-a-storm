@@ -11,6 +11,8 @@ function trackErrors(page: Page): string[] {
 }
 
 const GUIDE_KEY = "dial-a-storm:guide-seen";
+const ENTERED_KEY = "dial-a-storm:entered";
+const landing = (page: Page) => page.getByRole("region", { name: "Welcome" });
 const dials = (page: Page) => page.getByRole("region", { name: "Solar wind dials" });
 const playback = (page: Page) => page.getByRole("region", { name: "Playback" });
 const scrub = (page: Page) => page.getByRole("slider", { name: "Scrub playback time" });
@@ -18,6 +20,15 @@ const peak = (page: Page) => page.getByTestId("peak-whatif");
 const stormChip = (page: Page) => page.getByRole("button", { name: /Change storm/ });
 const catalogue = (page: Page) => page.getByRole("dialog", { name: "Storm catalogue" });
 const warning = (page: Page) => dials(page).getByRole("alert");
+const knob = (page: Page) => page.getByRole("slider", { name: "Storm intensity" });
+const hero = (page: Page) => page.getByTestId("hero-value");
+const consequences = (page: Page) => page.getByRole("region", { name: "Consequences" });
+
+/** Open the full solar-wind panel (three sliders, Max, Reset, Simulate) behind the knob. */
+async function openTune(page: Page) {
+  if ((await dials(page).count()) === 0) await page.getByRole("button", { name: "Fine-tune" }).click();
+  await expect(dials(page)).toBeVisible();
+}
 
 /** Press a global shortcut with nothing focused (form fields keep their own keys). */
 async function pressGlobal(page: Page, key: string) {
@@ -25,13 +36,19 @@ async function pressGlobal(page: Page, key: string) {
   await page.keyboard.press(key);
 }
 
-/** Load the page (guide already seen) and wait until the default storm (the hold-out) is ready. */
+/** Load the page (landing and guide already seen) and wait until the default storm is ready. */
 async function openReady(page: Page) {
-  await page.addInitScript((key) => window.localStorage.setItem(key, "1"), GUIDE_KEY);
+  await page.addInitScript(
+    ([guide, entered]) => {
+      window.localStorage.setItem(guide, "1");
+      window.sessionStorage.setItem(entered, "1");
+    },
+    [GUIDE_KEY, ENTERED_KEY],
+  );
   await page.goto("/");
   await expect(stormChip(page)).toContainText("Gannon");
-  await expect(peak(page)).not.toHaveText(/^—/);
-  await expect(dials(page).getByRole("button", { name: "Simulate from the start" })).toBeEnabled();
+  await expect(hero(page)).not.toHaveText(/^—/);
+  await expect(knob(page)).toBeVisible();
 }
 
 test.describe("static data", () => {
@@ -85,7 +102,7 @@ test.describe("page", () => {
       await button.click();
       await expect(catalogue(page)).toHaveCount(0);
       await expect(stormChip(page)).toContainText(name);
-      await expect(peak(page)).not.toHaveText(/^—/);
+      await expect(hero(page)).not.toHaveText(/^—/);
     }
 
     await expect(stormChip(page)).not.toContainText("loading");
@@ -127,7 +144,7 @@ test.describe("page", () => {
     await tabs.getByRole("tab", { name: "Explainer" }).focus();
     await page.keyboard.press("ArrowLeft");
     await expect(tabs.getByRole("tab", { name: "Simulator" })).toHaveAttribute("aria-selected", "true");
-    await expect(dials(page)).toBeVisible();
+    await expect(knob(page)).toBeVisible();
     expect(errors).toEqual([]);
   });
 
@@ -147,9 +164,45 @@ test.describe("page", () => {
 });
 
 test.describe("controls", () => {
-  test("solar-wind dials change the prediction, flag extrapolation, and Reset restores it", async ({ page }) => {
+  test("one knob drives the storm; consequences, ruler and the extrapolation flag follow", async ({ page }) => {
     const errors = trackErrors(page);
     await openReady(page);
+
+    // Simplified HUD: one knob; the three sliders stay behind Fine-tune.
+    await expect(dials(page)).toHaveCount(0);
+    await expect(knob(page)).toHaveAttribute("aria-valuenow", "1");
+    await expect(consequences(page)).toBeVisible();
+    await expect(page.getByTestId("history-ruler")).toBeVisible();
+    const verdict = page.getByTestId("history-verdict");
+    const before = await verdict.innerText();
+    // Gannon at 1x is already beyond the 2010-2019 coupling maximum: the flag shows under the knob.
+    await expect(page.getByTestId("dial-advisory")).toContainText("BEYOND TRAINING DATA");
+
+    await knob(page).focus();
+    await page.keyboard.press("End");
+    await expect(knob(page)).toHaveAttribute("aria-valuenow", "3");
+    await expect(verdict).not.toHaveText(before);
+    // At x3 Gannon would black out regional grids.
+    await expect.poll(async () => Number(await page.getByTestId("impact-grid").getAttribute("data-peak-level"))).toBeGreaterThanOrEqual(3);
+
+    // The knob moved all three drivers along its curve.
+    await openTune(page);
+    await expect(dials(page).getByLabel("Southward Bz")).toHaveValue("3");
+    await expect(dials(page).getByLabel("Wind speed")).toHaveValue("1.5");
+    await expect(dials(page).getByLabel("Proton density")).toHaveValue("2");
+
+    await page.keyboard.press("Escape");
+    await expect(dials(page)).toHaveCount(0);
+    await page.getByRole("button", { name: "Reset dial" }).click();
+    await expect(knob(page)).toHaveAttribute("aria-valuenow", "1");
+    await expect(verdict).toHaveText(before);
+    expect(errors).toEqual([]);
+  });
+
+  test("fine-tune sliders change the prediction, flag extrapolation, and Reset restores it", async ({ page }) => {
+    const errors = trackErrors(page);
+    await openReady(page);
+    await openTune(page);
 
     const reset = dials(page).getByRole("button", { name: "Reset" });
     await expect(reset).toBeDisabled();
@@ -174,6 +227,8 @@ test.describe("controls", () => {
 
     await dials(page).getByRole("button", { name: "Max" }).click();
     await expect(dials(page).getByLabel("Southward Bz")).toHaveValue("3");
+    // Off the knob's curve: the knob says so.
+    await expect(knob(page)).toHaveAttribute("aria-valuetext", /fine-tuned/);
     await page.keyboard.press("r");
     await expect(peak(page)).toHaveText(baseline);
     expect(errors).toEqual([]);
@@ -205,6 +260,7 @@ test.describe("controls", () => {
     await playback(page).getByRole("combobox", { name: "Replay duration" }).selectOption("48");
     await expect(playback(page).getByRole("combobox", { name: "Replay duration" })).toHaveValue("48");
 
+    await openTune(page);
     await dials(page).getByRole("button", { name: "Simulate from the start" }).click();
     await expect(playback(page).getByRole("button", { name: "Pause" })).toBeVisible();
     await pressGlobal(page, "Space");
@@ -248,25 +304,61 @@ test.describe("scene interaction", () => {
   });
 });
 
+test.describe("landing", () => {
+  test("scrolling dives into the storm and reveals the app", async ({ page }) => {
+    const errors = trackErrors(page);
+    await page.goto("/");
+    await expect(landing(page)).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1 })).toHaveText(/Dial-a-Storm/i);
+    // The HUD is inert while the landing is up.
+    await expect(page.getByRole("button", { name: "Help" })).toHaveCount(0);
+
+    await page.mouse.move(720, 450);
+    for (let i = 0; i < 6; i++) await page.mouse.wheel(0, 300);
+    await expect(landing(page)).toHaveCount(0, { timeout: 30_000 });
+    await expect(page.getByRole("button", { name: "Help" })).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Guide" })).toBeVisible();
+
+    // Same tab session: reloading skips straight to the app.
+    await page.reload();
+    await expect(stormChip(page)).toBeVisible();
+    await expect(landing(page)).toHaveCount(0);
+    expect(errors).toEqual([]);
+  });
+
+  test("a small scroll springs back to the title", async ({ page }) => {
+    await page.goto("/");
+    await expect(landing(page)).toBeVisible();
+    await page.mouse.move(720, 450);
+    await page.mouse.wheel(0, 40);
+    await page.waitForTimeout(1500);
+    await expect(landing(page)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Help" })).toHaveCount(0);
+  });
+});
+
 test.describe("guide", () => {
   test("opens on the first visit, runs the superstorm demo, then stays closed", async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto("/");
+    await expect(landing(page)).toBeVisible();
+    await page.getByRole("button", { name: "Enter Dial-a-Storm" }).click();
+    await expect(landing(page)).toHaveCount(0, { timeout: 30_000 });
     const guide = page.getByRole("dialog", { name: "Guide" });
     await expect(guide).toBeVisible();
-    await expect(peak(page)).not.toHaveText(/^—/);
+    await expect(hero(page)).not.toHaveText(/^—/);
 
     await guide.getByRole("button", { name: "Next" }).click();
     await guide.getByRole("button", { name: "Next" }).click();
     await guide.getByRole("button", { name: "Try the superstorm what-if" }).click();
     await expect(guide).toHaveCount(0);
     await expect(page.getByRole("complementary", { name: "Magnetopause details" })).toBeVisible();
-    await expect(dials(page).getByLabel("Southward Bz")).toHaveValue("3");
-    await expect(warning(page)).toContainText("BEYOND TRAINING DATA");
+    await expect(knob(page)).toHaveAttribute("aria-valuenow", "3");
+    await expect(page.getByTestId("dial-advisory")).toContainText("BEYOND TRAINING DATA");
     await expect(playback(page).getByRole("button", { name: "Pause" })).toBeVisible();
 
     await page.reload();
-    await expect(peak(page)).not.toHaveText(/^—/);
+    await expect(hero(page)).not.toHaveText(/^—/);
     await expect(guide).toHaveCount(0);
     await page.getByRole("button", { name: "Help" }).click();
     await expect(guide).toBeVisible();

@@ -63,19 +63,25 @@ expected. It means the predictions come from a stand-in physics model, not the t
 
 ### Try it
 
-1. Drag to orbit the scene and scroll to zoom. Click an object or its label (Sun, Earth,
+1. The title screen opens first. Scroll down (or press the button) to dive into the simulator.
+2. Drag to orbit the scene and scroll to zoom. Click an object or its label (Sun, Earth,
    magnetopause, aurora) for a details card, and double-click to fly to it.
-2. Change storm with the picker at the top left, or with `[` and `]`.
-3. Move the **Southward Bz**, **Wind speed** and **Proton density** dials (bottom right). The
-   timeline updates live. **Max** sets every dial to its maximum and **Reset** returns to history.
-4. Press **Simulate from the start**, or Space, to replay the storm. Drag the timeline to scrub.
+3. Change storm with the picker at the top left, or with `[` and `]`.
+4. Turn the **storm knob** (bottom right; drag it or use the arrow keys) to make the Sun stronger.
+   The headline, the history ruler (Gannon, Québec, Carrington) and the **What it does to us**
+   card (aurora cities, power grids, satellites, GPS, radio) follow it live.
+5. **Fine-tune** under the knob (or `T`) opens the separate **Southward Bz**, **Wind speed** and
+   **Proton density** sliders. **Max** sets every slider to its maximum and **Reset** returns to
+   history.
+6. Press **Simulate from the start**, or Space, to replay the storm. Drag the timeline to scrub.
    The headline names the storm phase: shock, main phase, peak, recovery.
-5. Open the **Explainer** tab (or press `E`) for the physics, the method, the Gannon hold-out
+7. Open the **Explainer** tab (or press `E`) for the physics, the method, the Gannon hold-out
    test, the storm catalogue and the data's limits.
 
 An amber **BEYOND TRAINING DATA** box means the scenario drives the magnetosphere harder than
 anything in the 2010–2019 training data. It is a deliberate warning, not an error. For Gannon it
-shows even with the dials at 1×.
+shows even with the knob at 1×. With fine-tune closed, a short version of the warning sits under
+the knob.
 
 ### Other web commands (from `web/`)
 

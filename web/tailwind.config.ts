@@ -19,14 +19,19 @@ const config: Config = {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
         serif: ["var(--font-serif)", "ui-serif", "Georgia", "serif"],
+        display: ["var(--font-display)", "var(--font-sans)", "sans-serif"],
       },
       keyframes: {
         pulseAmber: {
           "0%, 100%": { boxShadow: "0 0 0 0 rgba(245, 158, 11, 0.55)" },
           "50%": { boxShadow: "0 0 0 8px rgba(245, 158, 11, 0)" },
         },
+        impactIn: {
+          "0%": { opacity: "0", transform: "translateY(4px)", filter: "blur(4px)" },
+          "100%": { opacity: "1", transform: "none", filter: "none" },
+        },
       },
-      animation: { pulseAmber: "pulseAmber 1.8s ease-in-out infinite" },
+      animation: { pulseAmber: "pulseAmber 1.8s ease-in-out infinite", impactIn: "impactIn 0.45s ease-out" },
     },
   },
   plugins: [],

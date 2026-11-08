@@ -35,14 +35,18 @@ pipeline/                 Offline Python 3.11/3.12 (run everything from this fol
   tests/test_causality.py Leakage / contamination tests (17)
   data/                   NOT IN GIT: raw/ (CSV), cache/ (Parquet, trained models)
 web/                      Next.js 14 App Router, client-only
-  app/                    page.tsx (two tabs: Simulator, Explainer), layout.tsx (next/font: Inter,
-                          JetBrains Mono, Instrument Serif), globals.css (`glass`, `micro` etc.)
+  app/                    page.tsx (landing + two tabs: Simulator, Explainer), layout.tsx (next/font:
+                          Inter, JetBrains Mono, Instrument Serif, self-hosted Orbitron), globals.css
+  components/landing/     Landing (title screen, scroll-driven dive into the app), StormCanvas (shader)
   components/scene/       R3F scene (the Simulator tab): SpaceCanvas, Sun, Earth (textured),
-                          SolarWindParticles (streaks + cusp capture), ImfLines, Magnetopause (shell +
-                          GEO ring), ReconnectionFlash, FieldLines, RingCurrent, AuroraRing,
-                          SceneLabels, SelectionHalo, CameraRig (orbit + fly-to views), pick.ts
-  components/hud/         TopBar (storm picker + tabs), Headline (live narration + storm phase),
-                          DialPanel, TimelineDock, InfoPanel (selected object), GuidePanel
+                          SolarWindParticles (streaks, cusp capture, no pinch-back), ImfLines,
+                          Magnetopause (shell + GEO ring), ReconnectionFlash, FieldLines, RingCurrent,
+                          AuroraRing, SceneLabels, SelectionHalo, CameraRig (orbit + fly-to), pick.ts
+  components/hud/         TopBar (storm picker + tabs + toolbar), Headline (narration, storm phase,
+                          HistoryRuler), StormDial (one knob; fine-tune and dock behind a menu),
+                          Impacts (consequences), TunePopover wrapping DialPanel (fine-tune
+                          sliders), TimelineDock,
+                          InfoPanel (selected object), GuidePanel
   components/explainer/   ExplainerTab (physics chain, method, hold-out, catalogue, honest notes)
   components/deck/        ComparisonChart (SVG, with shock / peak markers)
   components/ui/          HoldoutSection (Gannon hold-out results, shown in the Explainer tab)
