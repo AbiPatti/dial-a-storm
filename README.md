@@ -21,6 +21,8 @@ We wanted to answer two questions in a way anyone could see:
 1. **What did these storms actually do?** Show the Sun, the solar wind, Earth's magnetic shield and the aurora in 3D, driven by real NASA measurements. Translate SYM-H into things people understand: how far south the aurora reached, and what happened to power grids, satellites, GPS and radio.
 2. **What if one had been stronger?** Let people turn a dial that scales up the solar wind behind a real storm. A machine-learning model then predicts the result, placed on a ruler next to Gannon 2024, the Québec blackout of 1989 and Carrington.
 
+> To maximize output during the 24-hour hackathon, we utilized agentic development workflows. We orchestrated Claude Code CLI, Kiro CLI, and custom agent instructions to rapidly scaffold and test the Next.js/WebGL frontend while the team focused on engineering the hybrid Ridge/XGBoost data pipeline and improving the UI.
+
 ## What you can do
 
 - **Simulator tab.** Pick one of eight storms and press play. The 3D scene replays it: the solar wind speeds up, Earth's magnetic shield (the magnetopause) gets squashed, and a ring of current builds around Earth. The aurora also slides toward the equator. A panel on the right translates the live SYM-H into consequences, from "Polar skies only" to "Continental" blackouts. Each level names a real event where it actually happened.
