@@ -4,7 +4,7 @@
 
 Dial-a-Storm replays the eight strongest geomagnetic storms of 2010–2026 in an interactive 3D scene. You can then turn up the Sun and see what a stronger storm would have done to Earth.
 
-**Live site:** [SunnyWithAChanceOftorms.vodka](https://sunnywithachanceofstorms.vodka/)
+**Live site:** [SunnyWithAChanceOfStorms.vodka](https://sunnywithachanceofstorms.vodka/)
 
 **Demo video:** [Watch on YouTube](https://www.youtube.com/watch?v=juPEC7t1xSU)
 
